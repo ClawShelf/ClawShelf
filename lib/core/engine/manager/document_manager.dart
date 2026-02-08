@@ -4,7 +4,8 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
+import 'package:molt_manual/core/engine/isar/document.dart'; // Models
+import 'package:molt_manual/core/engine/isar/app_config.dart'; // Models
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -15,7 +16,7 @@ class DocSyncManager {
 
   DocSyncManager(this.isar);
 
-  /// Called by the Seed Screen (Blocks UI)
+  /// --- THE MAIN INITIALIZER ---
   Future<void> initLocalData() async {
     final info = await PackageInfo.fromPlatform();
     final int packageBuild = int.parse(info.buildNumber);
@@ -24,21 +25,34 @@ class DocSyncManager {
         .filter()
         .keyEqualTo("synced_build")
         .findFirst();
+    final int localBuild = meta?.value ?? 0;
 
-    if ((meta?.value ?? 0) < packageBuild) {
-      final json = await rootBundle.loadString('assets/master_doc.json');
+    if (localBuild < packageBuild) {
+      // 1. Load ALL asset files here
+      final String docJson = await rootBundle.loadString(
+        'assets/master_doc.json',
+      );
+      final String configJson = await rootBundle.loadString(
+        'assets/app_config.json',
+      );
+
       final dir = await getApplicationDocumentsDirectory();
 
-      // We pass the PATH, not the Isar instance
+      // 2. Offload everything to the worker
       await Isolate.run(
-        () => _backgroundWorker(dir.path, json, packageBuild, null),
+        () => _backgroundWorker(
+          dir.path,
+          docJson,
+          configJson,
+          packageBuild,
+          null, // No remote hash for asset seed
+        ),
       );
     }
   }
 
-  /// Called by the Main Page (Background)
   void startBackgroundRemoteSync() {
-    // _checkForUpdates();
+    _checkForUpdates();
   }
 
   Future<void> _checkForUpdates() async {
@@ -51,82 +65,130 @@ class DocSyncManager {
           .filter()
           .keyEqualTo("docs_hash")
           .findFirst();
-
       if (meta?.valueString != remoteHash) {
         final fullDoc = await http.get(Uri.parse(remoteUrl));
         final dir = await getApplicationDocumentsDirectory();
 
+        // Background sync: only updates docs, leaves Nav/Redirects as-is
         await Isolate.run(
-          () => _backgroundWorker(dir.path, fullDoc.body, null, remoteHash),
+          () =>
+              _backgroundWorker(dir.path, fullDoc.body, null, null, remoteHash),
         );
       }
     } catch (e) {
-      print("Remote sync skipped: $e");
+      print("Sync skipped: $e");
     }
   }
 }
 
-/// The Isolate Worker: Re-opens Isar and performs the import
+/// --- THE ISOLATE WORKER ---
 Future<void> _backgroundWorker(
   String path,
-  String json,
+  String docJson,
+  String? configJson,
   int? build,
   String? hash,
 ) async {
-  // 1. Re-open Isar in the new isolate using the same schemas and name
   final workerIsar = await Isar.open(
-    [DocEntrySchema, AppMetadataSchema],
+    [DocEntrySchema, AppMetadataSchema, AppNavigationSchema, AppRedirectSchema],
     directory: path,
-    name: 'default', // Matches your main instance name
+    name: 'default',
   );
 
-  try {
-    // 2. Perform the logic
-    await _performImportLogic(workerIsar, json, build, hash);
-  } catch (e) {
-    print("Import Failed: $e");
-  }
+  final docData = jsonDecode(docJson);
+  final List docs = docData['docs'];
+  final String finalHash = hash ?? md5.convert(utf8.encode(docJson)).toString();
 
-  // 3. Close the instance for this isolate before it exits
-  await workerIsar.close();
-}
-
-Future<void> _performImportLogic(
-  Isar db,
-  String json,
-  int? build,
-  String? hash,
-) async {
-  final data = jsonDecode(json);
-  final List docs = data['docs'];
-  final String finalHash = hash ?? md5.convert(utf8.encode(json)).toString();
-
-  final entries = docs
+  // 1. Parse Docs
+  final docEntries = docs
       .map(
         (d) => DocEntry()
           ..docId = d['id']
-          ..title = d['title']
-          ..content = d['content'],
+          ..title = d['title'] ?? ""
+          ..content = d['content'] ?? ""
+          ..category = d['category'] ?? "General"
+          ..emoji = d['emoji'] ?? "📝"
+          ..lastUpdated = DateTime.now(),
       )
       .toList();
 
-  // Using sync transaction inside the isolate is often faster
-  db.writeTxnSync(() {
-    db.docEntrys.clearSync();
-    db.docEntrys.putAllSync(entries);
+  // 2. Parse Config (Only if provided during local seed)
+  List<AppNavigation>? navItems;
+  List<AppRedirect>? redirects;
+
+  if (configJson != null) {
+    final configData = jsonDecode(configJson);
+
+    // 1. Map Navigation (Recursive)
+    navItems = ((configData['navigation'] as Map<String, dynamic>).keys).map((
+      languageCode,
+    ) {
+      final navJson = configData['navigation'][languageCode];
+      return AppNavigation()
+        ..languageCode = languageCode
+        ..tabs = (navJson as List).map((tabJson) {
+          return NavTab()
+            ..title = tabJson['tab_title']
+            ..groups = (tabJson['groups'] as List).map((groupJson) {
+              return NavGroup()
+                ..title = groupJson['group_title']
+                ..nodes = (groupJson['pages'] as List)
+                    .map((nodeJson) => _mapNavNode(nodeJson))
+                    .toList();
+            }).toList();
+        }).toList();
+    }).toList();
+
+    // 2. Map Redirects (Handling those 'late' fields)
+    redirects = (configData['redirects'] as List).map((r) {
+      return AppRedirect()
+        ..source =
+            r['source'] ??
+            "" // FIX: Ensure late fields are set
+        ..destination =
+            r['destination'] ?? ""; // FIX: Ensure late fields are set
+    }).toList();
+  }
+
+  // 3. ATOMIC WRITE
+  workerIsar.writeTxnSync(() {
+    workerIsar.docEntrys.clearSync();
+    workerIsar.docEntrys.putAllSync(docEntries);
+
+    if (navItems != null) {
+      workerIsar.appNavigations.clearSync();
+      workerIsar.appNavigations.putAllSync(navItems);
+    }
+
+    if (redirects != null) {
+      workerIsar.appRedirects.clearSync();
+      workerIsar.appRedirects.putAllSync(redirects);
+    }
 
     if (build != null) {
-      db.appMetadatas.putSync(
+      workerIsar.appMetadatas.putSync(
         AppMetadata()
           ..key = "synced_build"
           ..value = build,
       );
     }
-
-    db.appMetadatas.putSync(
+    workerIsar.appMetadatas.putSync(
       AppMetadata()
         ..key = "docs_hash"
         ..valueString = finalHash,
     );
   });
+
+  await workerIsar.close();
+}
+
+// Helper function for recursion
+NavNode _mapNavNode(Map<String, dynamic> json) {
+  return NavNode()
+    ..type = json['type']
+    ..title = json['title']
+    ..path = json['path']
+    ..children = json['children'] != null
+        ? (json['children'] as List).map((child) => _mapNavNode(child)).toList()
+        : null;
 }

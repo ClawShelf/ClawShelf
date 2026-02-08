@@ -19,13 +19,15 @@ class _MMDocSeedState extends State<MMDocSeed> {
     super.initState();
     _startInitialization();
   }
-Future<void> _startInitialization() async {
+
+  Future<void> _startInitialization() async {
     // 1. Setup Environment
     final dir = await getApplicationDocumentsDirectory();
     final isar = await Isar.open([
       DocEntrySchema,
       AppMetadataSchema,
       AppNavigationSchema,
+      AppRedirectSchema,
     ], directory: dir.path);
 
     // 2. Initialize the Manager
@@ -46,6 +48,7 @@ Future<void> _startInitialization() async {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
