@@ -4,6 +4,7 @@ import 'package:molt_manual/components/recent_card.dart';
 import 'package:molt_manual/core/engine/isar/app_config.dart';
 import 'package:molt_manual/core/engine/isar/document.dart';
 import 'package:molt_manual/screens/category_list.dart';
+import 'package:molt_manual/screens/search.dart';
 import 'package:molt_manual/services/doc_navigation.dart';
 
 class MoltManualMainPage extends StatefulWidget {
@@ -72,46 +73,72 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
                 childAspectRatio: 1.1,
               ),
               delegate: SliverChildListDelegate([
-                _buildBentoCard(
-                  "Core Skills",
-                  Icons.auto_awesome,
-                  Colors.amber,
-                  ['concepts', 'nodes'],
-                  isTall: true,
-                ),
-                _buildBentoCard("Quick Help", Icons.bolt, Colors.green, [
+                _buildBentoCard("Fundamentals", Icons.book, Colors.amber, [
+                  'concepts',
+                  'nodes',
+                  'automation',
+                ], isTall: true),
+                _buildBentoCard("Quick Start", Icons.bolt, Colors.green, [
                   'start',
                   'help',
-                  'general',
+                  'reference',
                 ]),
                 _buildBentoCard(
-                  "Tutorials",
-                  Icons.play_circle,
+                  "Skills & Tools",
+                  Icons.extension,
                   Colors.redAccent,
-                  ['tutorials', 'examples'],
+                  ['tools', 'plugins', 'web'],
                 ),
-                _buildBentoCard("Settings", Icons.tune, Colors.blueGrey, [
-                  'cli',
-                  'config',
+                _buildBentoCard("System & Setup", Icons.tune, Colors.blueGrey, [
                   'install',
+                  'gateway',
+                  'platforms',
+                  'cli',
                 ]),
               ]),
             ),
           ),
 
           _biuldRecentlyViewed(),
-          // // 3. Optional: "Recently Read" or "Featured" docs
-          // SliverToBoxAdapter(
-          //   child: Padding(
-          //     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          //     child: Text(
-          //       "Recently Viewed",
-          //       style: Theme.of(context).textTheme.titleMedium,
-          //     ),
-          //   ),
-          // ),
-          // Add a simple list of recently accessed Isar items here later
         ],
+      ),
+    );
+  }
+
+  Widget _buildSmartSearchBar() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MMSearchPage(isar: widget.isar, lang: 'en'),
+          ),
+        );
+      },
+      child: Hero(
+        tag: 'search_bar_hero', // Same tag must be used in SearchScreen
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: Colors.white70, size: 20),
+              const SizedBox(width: 10),
+              Text(
+                "Search agent commands...",
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -223,32 +250,6 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
     }
   }
 
-  Widget _buildSmartSearchBar() {
-    return Container(
-      height: 44,
-      width: 280,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-        ],
-      ),
-      child: const Row(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12),
-            child: Icon(Icons.search, color: Colors.deepPurple),
-          ),
-          Text(
-            "Search agent commands...",
-            style: TextStyle(color: Colors.grey, fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBentoCard(
     String title,
     IconData icon,
@@ -279,11 +280,9 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
               MaterialPageRoute(
                 builder: (context) => MMCategoryListPage(
                   isar: widget.isar,
-                  title: "Core Skills",
-                  categories: [
-                    'concepts',
-                    'nodes',
-                  ], // Maps to your Python 'category' logic
+                  title: title,
+                  categories:
+                      categories, // Maps to your Python 'category' logic
                   lang: 'en', // 'en' or 'zh'
                 ),
               ),

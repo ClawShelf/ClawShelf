@@ -53,6 +53,11 @@ class _DocContentPageState extends State<DocContentPage> {
 
           final doc = snapshot.data!;
 
+          // Inside your DocReaderPage
+          String sanitizedContent = doc.content
+              .replaceAll(RegExp(r'<p[^>]*>'), '')
+              .replaceAll('</p>', '');
+
           // 3. Render the heavy Markdown content
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -67,8 +72,20 @@ class _DocContentPageState extends State<DocContentPage> {
                 ),
                 const Divider(),
                 MarkdownBody(
-                  data: doc.content,
+                  data: sanitizedContent,
                   selectable: true,
+                  imageBuilder: (uri, title, alt) {
+                    // Because the Python script simplified <img src="/assets/logo.png">
+                    // to ![Logo](logo.png), uri.path is now just 'logo.png'
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Image.asset(
+                        'assets/images/${uri.path}',
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.broken_image),
+                      ),
+                    );
+                  },
                   styleSheet: MarkdownStyleSheet(
                     code: const TextStyle(
                       backgroundColor: Color(0xFFEEEEEE),
