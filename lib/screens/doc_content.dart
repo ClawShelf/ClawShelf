@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:isar/isar.dart';
+import 'package:markdown/markdown.dart' as md;
+import 'package:molt_manual/components/markdown/card_tag.dart';
+import 'package:molt_manual/components/markdown/fallback_element.dart';
 import 'package:molt_manual/core/engine/isar/document.dart';
+import 'package:molt_manual/services/doc_navigation.dart';
 
 class DocContentPage extends StatefulWidget {
   final Id id; // Pass only the Isar ID
@@ -86,6 +90,22 @@ class _DocContentPageState extends State<DocContentPage> {
                       ),
                     );
                   },
+                  extensionSet: md.ExtensionSet(
+                    [
+                      const CardBlockSyntax(),
+                      ...md.ExtensionSet.gitHubWeb.blockSyntaxes,
+                    ],
+                    [...md.ExtensionSet.gitHubWeb.inlineSyntaxes],
+                  ),
+                  builders: {
+                    "Card": CardWidgetBuilder(context, isar: widget.isar),
+                    'UnknownTag': FallbackTagBuilder(),
+                  },
+                  onTapLink: (text, href, title) {
+                    if (href != null) {
+                      handleInternalLink(href, context);
+                    }
+                  },
                   styleSheet: MarkdownStyleSheet(
                     code: const TextStyle(
                       backgroundColor: Color(0xFFEEEEEE),
@@ -103,6 +123,16 @@ class _DocContentPageState extends State<DocContentPage> {
         },
       ),
     );
+  }
+
+  void handleInternalLink(String href, BuildContext context) {
+    // 1. Skip external URLs
+    if (href.startsWith('http') || href.startsWith('mailto:')) {
+      // Use url_launcher to open in browser
+      return;
+    }
+
+    MMDocNavigation.navigateToDoc(context, href, widget.isar);
   }
 
   Widget _buildSkeletonLoader() {

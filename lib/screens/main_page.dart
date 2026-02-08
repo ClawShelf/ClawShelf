@@ -200,11 +200,10 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
                       dense: true,
                       title: Text(
                         node.title ??
-                            widget.isar.docEntrys
-                                .filter()
-                                .docIdEqualTo(node.targetId)
-                                .findFirstSync()
-                                ?.title ??
+                            MMDocNavigation.findDocByPath(
+                              node.path!,
+                              widget.isar,
+                            )?.title ??
                             "Page",
                       ),
                       onTap: () {
@@ -223,11 +222,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
         dense: true,
         title: Text(
           node.title ??
-              widget.isar.docEntrys
-                  .filter()
-                  .docIdEqualTo(node.targetId)
-                  .findFirstSync()
-                  ?.title ??
+              MMDocNavigation.findDocByPath(node.path!, widget.isar)?.title ??
               "Page",
         ),
         onTap: () {
@@ -241,13 +236,14 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
 
   void _openDoc(String? path) async {
     if (path == null) return;
-    final doc = await widget.isar.docEntrys
-        .filter()
-        .docIdEqualTo(path.replaceAll('/', '_'))
-        .findFirst();
-    if (doc != null && mounted) {
-      MMDocNavigation.open(context, widget.isar, doc);
-    }
+    MMDocNavigation.navigateToDoc(context, path, widget.isar);
+    // final doc = await widget.isar.docEntrys
+    //     .filter()
+    //     .docIdEqualTo(path.replaceAll('/', '_'))
+    //     .findFirst();
+    // if (doc != null && mounted) {
+    //   MMDocNavigation.open(context, widget.isar, doc);
+    // }
   }
 
   Widget _buildBentoCard(
