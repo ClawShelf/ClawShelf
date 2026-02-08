@@ -5,11 +5,18 @@ part 'document.g.dart';
 class DocEntry {
   Id id = Isar.autoIncrement;
 
-  @Index(type: IndexType.value)
+  @Index(type: IndexType.value, unique: true, replace: true)
   String? docId; // e.g., "start_install"
 
+  String? docPath;
+
+  // Filter by category for Bento Boxes (e.g., 'concepts', 'cli')
   @Index(type: IndexType.value)
-  String category = "General";
+  String category = "general";
+
+  // Filter by language (e.g., 'en', 'zh')
+  @Index(type: IndexType.value)
+  String lang = "en";
 
   String? title;
   String? emoji;
@@ -17,6 +24,15 @@ class DocEntry {
   // Isar's Full-Text Search index
   @Index(type: IndexType.hash)
   String content = "";
+
+  // For the "Recently Viewed" section on the Main Page
+  @Index(type: IndexType.value)
+  DateTime? lastAccessed;
+
+  String? summary;
+
+  // Isar handles List<String> natively
+  List<String>? readWhen;
 
   DateTime? lastUpdated;
 }

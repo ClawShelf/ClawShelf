@@ -100,17 +100,20 @@ Future<void> _backgroundWorker(
   final String finalHash = hash ?? md5.convert(utf8.encode(docJson)).toString();
 
   // 1. Parse Docs
-  final docEntries = docs
-      .map(
-        (d) => DocEntry()
-          ..docId = d['id']
-          ..title = d['title'] ?? ""
-          ..content = d['content'] ?? ""
-          ..category = d['category'] ?? "General"
-          ..emoji = d['emoji'] ?? "📝"
-          ..lastUpdated = DateTime.now(),
-      )
-      .toList();
+  final docEntries = docs.map((d) {
+    return DocEntry()
+      ..docId = d['id']
+      ..docPath = d['path']
+      ..content = d['content'] ?? ""
+      ..title = d['title'] ?? ""
+      ..emoji = d['emoji'] ?? "📝"
+      ..category = d['category'] ?? "general"
+      ..lang = d['lang'] ?? 'en'
+      ..summary = d['summary'] ?? ''
+      ..readWhen =
+          (d['read_when'] as List?)?.map((e) => e.toString()).toList() ?? []
+      ..lastUpdated = DateTime.now();
+  }).toList();
 
   // 2. Parse Config (Only if provided during local seed)
   List<AppNavigation>? navItems;

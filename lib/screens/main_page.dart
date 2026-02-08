@@ -1,135 +1,374 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
+import 'package:molt_manual/components/recent_card.dart';
 import 'package:molt_manual/core/engine/isar/app_config.dart';
 import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/screens/doc_content.dart';
+import 'package:molt_manual/screens/category_list.dart';
+import 'package:molt_manual/services/doc_navigation.dart';
 
 class MoltManualMainPage extends StatefulWidget {
-  const MoltManualMainPage({super.key, required this.isar});
   final Isar isar;
+  const MoltManualMainPage({super.key, required this.isar});
 
   @override
   State<MoltManualMainPage> createState() => _MoltManualMainPageState();
 }
 
 class _MoltManualMainPageState extends State<MoltManualMainPage> {
-  int _currentIndex = 0;
-  List<AppNavigation> _navConfigs = [];
+  AppNavigation? _config;
 
   @override
   void initState() {
     super.initState();
-    _loadNavigation();
+    _loadConfig();
   }
 
-  // Fetch the navigation config (e.g., for the 'en' language)
-  Future<void> _loadNavigation() async {
-    final configs = await widget.isar.appNavigations
-        .filter()
-        .languageCodeEqualTo("en")
-        .findAll();
-    setState(() {
-      _navConfigs = configs;
-    });
+  // Load the navigation tree from Isar
+  Future<void> _loadConfig() async {
+    final config = await widget.isar.appNavigations.where().findFirst();
+    setState(() => _config = config);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_navConfigs.isEmpty) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    // Get the tabs from your embedded NavTab model
-    final tabs = _navConfigs.first.tabs;
-
     return Scaffold(
-      // 1. Dynamic Body using IndexedStack to keep tabs "alive"
-      body: IndexedStack(
-        index: _currentIndex,
-        children: tabs.map((tab) => _buildTabContent(tab)).toList(),
-      ),
+      // The Sidebar now handles the "crowded" 2,400 doc hierarchy
+      drawer: _config != null ? _buildNavigationDrawer(_config!) : null,
 
-      // 2. Dynamic Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.amber,
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: tabs.map((tab) {
-          return BottomNavigationBarItem(
-            icon: const Icon(
-              Icons.folder_open,
-            ), // You could map this to your JSON icons
-            label: tab.title ?? "Tab",
-            backgroundColor: Colors.blue,
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  // This helper builds the actual view for each tab
-  Widget _buildTabContent(NavTab tab) {
-    // For now, let's show the groups/nodes defined in your config
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(title: Text(tab.title ?? "Manual")),
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final group = tab.groups?[index];
-            return Card(
-              child: ExpansionTile(
-                title: Text(group?.title ?? "Group"),
-                children:
-                    group?.nodes?.map((node) => _buildTabItem(node)).toList() ??
-                    [],
+      body: CustomScrollView(
+        slivers: [
+          // 1. Adaptive Header with Search
+          SliverAppBar(
+            expandedHeight: 140.0,
+            floating: true,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Colors.deepPurple.shade900,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
               ),
-            );
-          }, childCount: tab.groups?.length ?? 0),
-        ),
-      ],
+              title: _buildSmartSearchBar(),
+              centerTitle: true,
+              titlePadding: const EdgeInsets.only(bottom: 16),
+            ),
+          ),
+
+          // 2. Bento Grid: High-Level Categories
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.1,
+              ),
+              delegate: SliverChildListDelegate([
+                _buildBentoCard(
+                  "Core Skills",
+                  Icons.auto_awesome,
+                  Colors.amber,
+                  ['concepts', 'nodes'],
+                  isTall: true,
+                ),
+                _buildBentoCard("Quick Help", Icons.bolt, Colors.green, [
+                  'start',
+                  'help',
+                  'general',
+                ]),
+                _buildBentoCard(
+                  "Tutorials",
+                  Icons.play_circle,
+                  Colors.redAccent,
+                  ['tutorials', 'examples'],
+                ),
+                _buildBentoCard("Settings", Icons.tune, Colors.blueGrey, [
+                  'cli',
+                  'config',
+                  'install',
+                ]),
+              ]),
+            ),
+          ),
+
+          _biuldRecentlyViewed(),
+          // // 3. Optional: "Recently Read" or "Featured" docs
+          // SliverToBoxAdapter(
+          //   child: Padding(
+          //     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          //     child: Text(
+          //       "Recently Viewed",
+          //       style: Theme.of(context).textTheme.titleMedium,
+          //     ),
+          //   ),
+          // ),
+          // Add a simple list of recently accessed Isar items here later
+        ],
+      ),
     );
   }
 
-  Widget _buildTabItem(NavNode node) {
+  // RECURSIVE DRAWER Logic
+  Widget _buildNavigationDrawer(AppNavigation config) {
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Colors.deepPurple.shade50),
+            child: const Center(
+              child: Text(
+                "DOC INDEX",
+                style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: config.tabs.map((tab) => _buildTabFolder(tab)).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Recursive widget to handle deep nesting
+  Widget _buildTabFolder(NavTab tab) {
+    return ExpansionTile(
+      leading: const Icon(Icons.folder_open, size: 20),
+      title: Text(tab.title ?? "Untitled"),
+      children: tab.groups?.map((group) => _buildGroup(group)).toList() ?? [],
+    );
+  }
+
+  Widget _buildGroup(NavGroup group) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0),
+      child: ExpansionTile(
+        title: Text(group.title ?? "", style: const TextStyle(fontSize: 14)),
+        children: group.nodes?.map((node) => _buildNode(node)).toList() ?? [],
+      ),
+    );
+  }
+
+  Widget _buildNode(NavNode node) {
     if (node.children != null) {
-      return Card(
+      return Padding(
+        padding: const EdgeInsets.only(left: 16.0),
         child: ExpansionTile(
-          title: Text(node.title ?? "Page"),
-          subtitle: Text(node.path ?? ""),
-          children: node.children!
-              .map((child) => _buildTabItem(child))
-              .toList(),
+          title: Text(node.title ?? "", style: const TextStyle(fontSize: 14)),
+          children:
+              node.children
+                  ?.map(
+                    (node) => ListTile(
+                      dense: true,
+                      title: Text(
+                        node.title ??
+                            widget.isar.docEntrys
+                                .filter()
+                                .docIdEqualTo(node.targetId)
+                                .findFirstSync()
+                                ?.title ??
+                            "Page",
+                      ),
+                      onTap: () {
+                        // Navigate to content with the path (docId)
+                        Navigator.pop(context); // Close drawer
+                        _openDoc(node.path);
+                      },
+                    ),
+                  )
+                  .toList() ??
+              [],
         ),
       );
     } else {
       return ListTile(
+        dense: true,
         title: Text(
           node.title ??
               widget.isar.docEntrys
                   .filter()
-                  .docIdEqualTo(node.path?.replaceAll('/', '_'))
+                  .docIdEqualTo(node.targetId)
                   .findFirstSync()
                   ?.title ??
               "Page",
         ),
-        subtitle: Text(node.path ?? ""),
-        onTap: () async {
-          // Logic to handle navigation to the 'path'
-          final targetDoc = await widget.isar.docEntrys
-              .filter()
-              .docIdEqualTo(node.path?.replaceAll('/', '_'))
-              .findFirst();
-          if (targetDoc != null && mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    DocContentPage(id: targetDoc.id, isar: widget.isar),
-              ),
-            );
-          }
+        onTap: () {
+          // Navigate to content with the path (docId)
+          Navigator.pop(context); // Close drawer
+          _openDoc(node.path);
         },
       );
     }
+  }
+
+  void _openDoc(String? path) async {
+    if (path == null) return;
+    final doc = await widget.isar.docEntrys
+        .filter()
+        .docIdEqualTo(path.replaceAll('/', '_'))
+        .findFirst();
+    if (doc != null && mounted) {
+      MMDocNavigation.open(context, widget.isar, doc);
+    }
+  }
+
+  Widget _buildSmartSearchBar() {
+    return Container(
+      height: 44,
+      width: 280,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: const Row(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Icon(Icons.search, color: Colors.deepPurple),
+          ),
+          Text(
+            "Search agent commands...",
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBentoCard(
+    String title,
+    IconData icon,
+    Color color,
+    List<String> categories, {
+    bool isTall = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MMCategoryListPage(
+                  isar: widget.isar,
+                  title: "Core Skills",
+                  categories: [
+                    'concepts',
+                    'nodes',
+                  ], // Maps to your Python 'category' logic
+                  lang: 'en', // 'en' or 'zh'
+                ),
+              ),
+            );
+          },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _biuldRecentlyViewed() {
+    return // Replace your SliverToBoxAdapter with this Stream-based version
+    StreamBuilder<List<DocEntry>>(
+      // Watch the DB: Sort by lastAccessed, limit to 5 most recent
+      stream: widget.isar.docEntrys
+          .filter()
+          .lastAccessedIsNotNull()
+          .sortByLastAccessedDesc() // Only show docs that have actually been opened
+          .limit(5)
+          .watch(fireImmediately: true),
+      builder: (context, snapshot) {
+        final docs = snapshot.data ?? [];
+
+        if (docs.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return SliverMainAxisGroup(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                child: Text(
+                  "Recently Viewed",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 120,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    return RecentDocCard(
+                      doc: doc,
+                      onTap: () =>
+                          MMDocNavigation.open(context, widget.isar, doc),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class MoltManualSearch extends StatefulWidget {
-  const MoltManualSearch({super.key});
+class MMSearchPage extends StatefulWidget {
+  const MMSearchPage({super.key});
 
   @override
-  State<MoltManualSearch> createState() => _MoltManualSearchState();
+  State<MMSearchPage> createState() => _MMSearchPageState();
 }
 
-class _MoltManualSearchState extends State<MoltManualSearch> {
+class _MMSearchPageState extends State<MMSearchPage> {
   @override
   Widget build(BuildContext context) {
     return const Placeholder();

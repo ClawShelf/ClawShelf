@@ -66,7 +66,20 @@ class _DocContentPageState extends State<DocContentPage> {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const Divider(),
-                MarkdownBody(data: doc.content, selectable: true),
+                MarkdownBody(
+                  data: doc.content,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet(
+                    code: const TextStyle(
+                      backgroundColor: Color(0xFFEEEEEE),
+                      fontFamily: 'monospace',
+                    ),
+                    codeblockDecoration: BoxDecoration(
+                      color: const Color(0xFF2D2D2D),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
               ],
             ),
           );
