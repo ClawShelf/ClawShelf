@@ -37,9 +37,9 @@ class _MMDocSeedState extends State<MMDocSeed> {
     // We 'await' this because the app isn't usable without the base data.
     await syncManager.initLocalData();
 
-    // 4. Trigger the OPTIONAL remote sync (Remote -> Local)
-    // We do NOT 'await' this. It runs in its own isolate while the user navigates.
-    syncManager.startBackgroundRemoteSync();
+    // // 4. Trigger the OPTIONAL remote sync (Remote -> Local)
+    // // We do NOT 'await' this. It runs in its own isolate while the user navigates.
+    // syncManager.startBackgroundRemoteSync();
 
     // 5. Navigation Handoff
     if (mounted) {
