@@ -68,12 +68,6 @@ class CardWidgetBuilder extends MarkdownElementBuilder {
     // Remove leading slash and find the matching doc
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
 
-    // // Logic to find the doc entry by path (e.g., matching against 'start/wizard.md')
-    // final targetDoc = allDocs.firstWhere(
-    //   (d) => d.docPath.contains(cleanPath),
-    //   orElse: () => null
-    // );
-
     final targetDoc = isar.docEntrys
         .filter()
         .docIdEqualTo(cleanPath.replaceAll('/', '_'))
@@ -81,10 +75,6 @@ class CardWidgetBuilder extends MarkdownElementBuilder {
 
     if (targetDoc != null) {
       CSDocNavigation.open(context, isar, targetDoc);
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => DocReaderPage(doc: targetDoc)),
-      // );
     }
   }
 

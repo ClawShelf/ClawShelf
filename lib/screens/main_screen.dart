@@ -311,8 +311,7 @@ class _CSMainScreenState extends State<CSMainScreen> {
   }
 
   Widget _biuldRecentlyViewed() {
-    return // Replace your SliverToBoxAdapter with this Stream-based version
-    StreamBuilder<List<DocEntry>>(
+    return StreamBuilder<List<DocEntry>>(
       // Watch the DB: Sort by lastAccessed, limit to 5 most recent
       stream: widget.isar.docEntrys
           .filter()
