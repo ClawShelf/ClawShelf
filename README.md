@@ -28,7 +28,7 @@ Navigating hundreds of technical files shouldn't be a chore. ClawShelf takes the
 ### Installation
 1.  **Clone the repository**:
     ```bash
-    git clone [https://github.com/ClawShelf/ClawShelf.git](https://github.com/ClawShelf/ClawShelf.git)
+    git clone https://github.com/ClawShelf/ClawShelf.git
     ```
 2.  **Install dependencies**:
     ```bash
