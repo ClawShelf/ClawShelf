@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import 'package:molt_manual/components/recent_card.dart';
-import 'package:molt_manual/core/engine/isar/app_config.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/screens/category_list.dart';
-import 'package:molt_manual/screens/search.dart';
-import 'package:molt_manual/services/doc_navigation.dart';
+import 'package:claw_shelf/components/recent_card.dart';
+import 'package:claw_shelf/core/engine/isar/app_config.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/screens/category_list.dart';
+import 'package:claw_shelf/screens/search.dart';
+import 'package:claw_shelf/services/doc_navigation.dart';
 
-class MoltManualMainPage extends StatefulWidget {
+class CSMainScreen extends StatefulWidget {
   final Isar isar;
-  const MoltManualMainPage({super.key, required this.isar});
+  const CSMainScreen({super.key, required this.isar});
 
   @override
-  State<MoltManualMainPage> createState() => _MoltManualMainPageState();
+  State<CSMainScreen> createState() => _CSMainScreenState();
 }
 
-class _MoltManualMainPageState extends State<MoltManualMainPage> {
+class _CSMainScreenState extends State<CSMainScreen> {
   AppNavigation? _config;
 
   @override
@@ -111,7 +111,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => MMSearchPage(isar: widget.isar, lang: 'en'),
+            builder: (context) => CSSearchScreen(isar: widget.isar, lang: 'en'),
           ),
         );
       },
@@ -121,7 +121,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.white24),
           ),
@@ -132,7 +132,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
               Text(
                 "Search agent commands...",
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
                 ),
               ),
@@ -200,7 +200,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
                       dense: true,
                       title: Text(
                         node.title ??
-                            MMDocNavigation.findDocByPath(
+                            CSDocNavigation.findDocByPath(
                               node.path!,
                               widget.isar,
                             )?.title ??
@@ -222,7 +222,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
         dense: true,
         title: Text(
           node.title ??
-              MMDocNavigation.findDocByPath(node.path!, widget.isar)?.title ??
+              CSDocNavigation.findDocByPath(node.path!, widget.isar)?.title ??
               "Page",
         ),
         onTap: () {
@@ -236,7 +236,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
 
   void _openDoc(String? path) async {
     if (path == null) return;
-    MMDocNavigation.navigateToDoc(context, path, widget.isar);
+    CSDocNavigation.navigateToDoc(context, path, widget.isar);
     // final doc = await widget.isar.docEntrys
     //     .filter()
     //     .docIdEqualTo(path.replaceAll('/', '_'))
@@ -257,10 +257,10 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.05),
+            color: color.withValues(alpha: 0.05),
             blurRadius: 10,
             spreadRadius: 2,
           ),
@@ -274,7 +274,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => MMCategoryListPage(
+                builder: (context) => CSCategoryListPage(
                   isar: widget.isar,
                   title: title,
                   categories:
@@ -290,7 +290,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 28),
@@ -355,7 +355,7 @@ class _MoltManualMainPageState extends State<MoltManualMainPage> {
                     return RecentDocCard(
                       doc: doc,
                       onTap: () =>
-                          MMDocNavigation.open(context, widget.isar, doc),
+                          CSDocNavigation.open(context, widget.isar, doc),
                     );
                   },
                 ),

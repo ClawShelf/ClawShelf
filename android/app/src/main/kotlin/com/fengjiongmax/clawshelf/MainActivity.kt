@@ -1,4 +1,4 @@
-package com.example.molt_manual
+package com.fengjiongmax.clawshelf
 
 import io.flutter.embedding.android.FlutterActivity
 

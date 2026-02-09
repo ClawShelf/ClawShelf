@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/screens/doc_content.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/screens/doc_content.dart';
 
-class MMDocNavigation {
+class CSDocNavigation {
   static void open(BuildContext context, Isar isar, DocEntry doc) {
     // 1. Centralized Update Logic
     // We don't 'await' here so the UI transitions immediately
@@ -16,7 +16,7 @@ class MMDocNavigation {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DocContentPage(id: doc.id, isar: isar),
+        builder: (context) => CSDocContentPage(id: doc.id, isar: isar),
       ),
     );
   }

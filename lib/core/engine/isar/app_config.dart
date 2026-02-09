@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
 
 part 'app_config.g.dart';
 

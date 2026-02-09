@@ -2,20 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/services/doc_navigation.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/services/doc_navigation.dart';
 
-class MMSearchPage extends StatefulWidget {
+class CSSearchScreen extends StatefulWidget {
   final Isar isar;
   final String lang;
 
-  const MMSearchPage({super.key, required this.isar, required this.lang});
+  const CSSearchScreen({super.key, required this.isar, required this.lang});
 
   @override
-  State<MMSearchPage> createState() => _MMSearchPageState();
+  State<CSSearchScreen> createState() => _CSSearchScreenState();
 }
 
-class _MMSearchPageState extends State<MMSearchPage> {
+class _CSSearchScreenState extends State<CSSearchScreen> {
   final TextEditingController _controller = TextEditingController();
   List<DocEntry> _results = [];
   Timer? _debounce;
@@ -72,7 +72,7 @@ class _MMSearchPageState extends State<MMSearchPage> {
             leading: Text(doc.emoji ?? "📄"),
             title: Text(doc.title ?? ""),
             subtitle: Text(doc.summary ?? "", maxLines: 1),
-            onTap: () => MMDocNavigation.open(context, widget.isar, doc),
+            onTap: () => CSDocNavigation.open(context, widget.isar, doc),
           );
         },
       ),

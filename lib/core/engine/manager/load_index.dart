@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/app_config.dart';
+import 'package:claw_shelf/core/engine/isar/app_config.dart';
 
 Future<void> loadConfigIntoIsar(Isar isar) async {
   // 1. Load the file from assets

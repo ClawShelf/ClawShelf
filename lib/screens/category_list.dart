@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/services/doc_navigation.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/services/doc_navigation.dart';
 
-class MMCategoryListPage extends StatelessWidget {
+class CSCategoryListPage extends StatelessWidget {
   final Isar isar;
   final List<String> categories;
   final String lang;
   final String title;
 
-  const MMCategoryListPage({
+  const CSCategoryListPage({
     super.key,
     required this.isar,
     required this.categories,
@@ -58,6 +58,6 @@ class MMCategoryListPage extends StatelessWidget {
 
   void _openDoc(BuildContext context, DocEntry doc) {
     // Logic to update lastAccessed and navigate
-    MMDocNavigation.open(context, isar, doc);
+    CSDocNavigation.open(context, isar, doc);
   }
 }

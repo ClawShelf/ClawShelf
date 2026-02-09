@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/document.dart'; // Models
-import 'package:molt_manual/core/engine/isar/app_config.dart'; // Models
+import 'package:claw_shelf/core/engine/isar/document.dart'; // Models
+import 'package:claw_shelf/core/engine/isar/app_config.dart'; // Models
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -76,7 +77,7 @@ class DocSyncManager {
         );
       }
     } catch (e) {
-      print("Sync skipped: $e");
+      debugPrint("Sync skipped: $e");
     }
   }
 }

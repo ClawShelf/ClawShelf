@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:isar/isar.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:molt_manual/components/markdown/card_tag.dart';
-import 'package:molt_manual/components/markdown/fallback_element.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/services/doc_navigation.dart';
+import 'package:claw_shelf/components/markdown/card_tag.dart';
+import 'package:claw_shelf/components/markdown/fallback_element.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/services/doc_navigation.dart';
 
-class DocContentPage extends StatefulWidget {
+class CSDocContentPage extends StatefulWidget {
   final Id id; // Pass only the Isar ID
   final Isar isar;
 
-  const DocContentPage({super.key, required this.id, required this.isar});
+  const CSDocContentPage({super.key, required this.id, required this.isar});
 
   @override
-  State<DocContentPage> createState() => _DocContentPageState();
+  State<CSDocContentPage> createState() => _CSDocContentPageState();
 }
 
-class _DocContentPageState extends State<DocContentPage> {
+class _CSDocContentPageState extends State<CSDocContentPage> {
   late Future<DocEntry?> _docFuture;
 
   @override
@@ -132,7 +132,7 @@ class _DocContentPageState extends State<DocContentPage> {
       return;
     }
 
-    MMDocNavigation.navigateToDoc(context, href, widget.isar);
+    CSDocNavigation.navigateToDoc(context, href, widget.isar);
   }
 
   Widget _buildSkeletonLoader() {

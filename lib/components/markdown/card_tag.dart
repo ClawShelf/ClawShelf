@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/services/doc_navigation.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/services/doc_navigation.dart';
 
 class CardWidgetBuilder extends MarkdownElementBuilder {
   final BuildContext context;
@@ -60,7 +60,7 @@ class CardWidgetBuilder extends MarkdownElementBuilder {
   void _handleNavigation(String path) {
     // Implement your navigation logic here.
     // Example: Use GoRouter or standard Navigator to find the docId from the path
-    print("Navigating to: $path");
+    debugPrint("Navigating to: $path");
 
     // If the path is /start/wizard, you'd find the doc with docPath "start/wizard.md"
     // and push a new DocReaderPage.
@@ -80,7 +80,7 @@ class CardWidgetBuilder extends MarkdownElementBuilder {
         .findFirstSync();
 
     if (targetDoc != null) {
-      MMDocNavigation.open(context, isar, targetDoc);
+      CSDocNavigation.open(context, isar, targetDoc);
       // Navigator.push(
       //   context,
       //   MaterialPageRoute(builder: (context) => DocReaderPage(doc: targetDoc)),

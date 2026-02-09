@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
-import 'package:molt_manual/core/engine/isar/app_config.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
-import 'package:molt_manual/core/engine/manager/document_manager.dart';
-import 'package:molt_manual/screens/main_page.dart';
+import 'package:claw_shelf/core/engine/isar/app_config.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/core/engine/manager/document_manager.dart';
+import 'package:claw_shelf/screens/main_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
-class MMDocSeed extends StatefulWidget {
-  const MMDocSeed({super.key});
+class CSDocSeedScreen extends StatefulWidget {
+  const CSDocSeedScreen({super.key});
 
   @override
-  State<MMDocSeed> createState() => _MMDocSeedState();
+  State<CSDocSeedScreen> createState() => _CSDocSeedScreenState();
 }
 
-class _MMDocSeedState extends State<MMDocSeed> {
+class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
   @override
   void initState() {
     super.initState();
@@ -44,7 +44,7 @@ class _MMDocSeedState extends State<MMDocSeed> {
     // 5. Navigation Handoff
     if (mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => MoltManualMainPage(isar: isar)),
+        MaterialPageRoute(builder: (_) => CSMainScreen(isar: isar)),
       );
     }
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:molt_manual/core/engine/isar/document.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
 
 class RecentDocCard extends StatelessWidget {
   final DocEntry doc;
@@ -14,7 +14,7 @@ class RecentDocCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+        side: BorderSide(color: Colors.grey.withValues(alpha:0.2)),
       ),
       child: InkWell(
         onTap: onTap,
