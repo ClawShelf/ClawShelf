@@ -58,7 +58,7 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
           children: [
             CircularProgressIndicator(), // Your pixel-lobster spinner
             SizedBox(height: 20),
-            Text("Organizing 2,400+ Skill Documents..."),
+            Text("Organizing Documents..."),
           ],
         ),
       ),

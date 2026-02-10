@@ -37,7 +37,14 @@ dependencies:
   isar: ^3.1.0+1
   isar_flutter_libs:
     git:
-      url: https://github.com/MrLittleWhite/isar_flutter_libs.git
+      url: https://github.com/ClawShelf/isar
+      ref: 3.1.0-buildfix
+      path: packages/isar_flutter_libs
+
+  # # the following is for local debug
+  # isar_flutter_libs: 
+  #   path: ../ClawShelf/isar/packages/isar_flutter_libs
+    
   path_provider: ^2.1.5
   http: ^1.6.0
   flutter_smooth_markdown: ^0.6.1

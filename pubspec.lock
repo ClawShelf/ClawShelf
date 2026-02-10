@@ -443,10 +443,10 @@ packages:
   isar_flutter_libs:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "59103190aa2ac03041d61ad6d127b540be079ec8"
-      url: "https://github.com/MrLittleWhite/isar_flutter_libs.git"
+      path: "packages/isar_flutter_libs"
+      ref: "3.1.0-buildfix"
+      resolved-ref: "40ae24c79e2e646826f3d8d029a13d382d75b91a"
+      url: "https://github.com/ClawShelf/isar"
     source: git
     version: "3.1.0+1"
   isar_generator:
