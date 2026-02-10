@@ -129,11 +129,14 @@ class _CSMainScreenState extends State<CSMainScreen> {
             children: [
               const Icon(Icons.search, color: Colors.white70, size: 20),
               const SizedBox(width: 10),
-              Text(
-                "Search agent commands...",
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 14,
+              Expanded(
+                child: Text(
+                  "Search agent commands...",
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
