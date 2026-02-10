@@ -445,7 +445,7 @@ packages:
     description:
       path: "packages/isar_flutter_libs"
       ref: "3.1.0-buildfix"
-      resolved-ref: "40ae24c79e2e646826f3d8d029a13d382d75b91a"
+      resolved-ref: "389bf93ae3cf47a9a6447ba61dd224836c253b2e"
       url: "https://github.com/ClawShelf/isar"
     source: git
     version: "3.1.0+1"
