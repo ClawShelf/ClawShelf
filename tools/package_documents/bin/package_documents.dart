@@ -75,7 +75,7 @@ void main(List<String> arguments) async {
   await DocProcessor(
     docsRoot: join(openClawPath, 'docs'),
     isar: isar,
-    imageDest: join(outputPath, 'img'),
+    imageDest: join(outputPath, 'images'),
   ).syncAll();
 
   await DocParser(isar: isar, openClawPath: openClawPath).updateDocs();

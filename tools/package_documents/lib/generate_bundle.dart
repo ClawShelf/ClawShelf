@@ -87,6 +87,7 @@ class DocProcessor {
       ..category = meta['category']
       ..lang = meta['lang']
       ..readWhen = meta['read_when']
+      ..summary = meta['summary']
       ..lastUpdated = stats;
   }
 
@@ -197,6 +198,8 @@ class DocProcessor {
               } else {
                 meta[k] = <String>[];
               }
+            } else {
+              meta[k] = v;
             }
           });
         }
