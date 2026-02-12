@@ -1,28 +1,30 @@
+import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/screens/doc_content.dart';
 
 class CSDocNavigation {
-  static void open(BuildContext context, Isar isar, DocEntry doc) {
-    // 1. Centralized Update Logic
+  static void open(BuildContext context, DocEntry doc) {
+    final getIt = GetIt.instance;
+    final settingsRepo = getIt.get<SettingsRepository>();
+
     // We don't 'await' here so the UI transitions immediately
-    isar.writeTxn(() async {
-      doc.lastAccessed = DateTime.now();
-      await isar.docEntrys.put(doc);
-    });
+    settingsRepo.addToHistory(doc);
 
     // 2. Centralized Routing
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => CSDocContentPage(id: doc.id, isar: isar),
-      ),
+      MaterialPageRoute(builder: (context) => CSDocContentPage(id: doc.id)),
     );
   }
 
-  static DocEntry? findDocByPath(String path, Isar isar) {
+  static DocEntry? findDocByPath(String path) {
     if (path.isEmpty) return null;
+
+    final getIt = GetIt.instance;
+    final docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
 
     // 1. Normalize the path
     // Remove leading/trailing slashes and lower-case it
@@ -35,7 +37,7 @@ class CSDocNavigation {
 
     // 3. Find the matching document
     // We check if the docPath ends with our link or matches it without .md
-    final targetDoc = isar.docEntrys.filter().anyOf([
+    final targetDoc = docsIsar.docEntrys.filter().anyOf([
       cleanPath,
       "${cleanPath}_index",
     ], (db, p) => db.docIdEqualTo(p)).findFirstSync();
@@ -43,11 +45,11 @@ class CSDocNavigation {
     return targetDoc;
   }
 
-  static void navigateToDoc(BuildContext context, String path, Isar isar) {
-    final targetDoc = findDocByPath(path, isar);
+  static void navigateToDoc(BuildContext context, String path) {
+    final targetDoc = findDocByPath(path);
 
     if (targetDoc != null) {
-      open(context, isar, targetDoc);
+      open(context, targetDoc);
     } else {
       ScaffoldMessenger.of(
         context,

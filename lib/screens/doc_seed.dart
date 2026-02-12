@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
-import 'package:claw_shelf/core/engine/isar/app_config.dart';
-import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:claw_shelf/screens/main_screen.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:get_it/get_it.dart';
+import 'package:isar/isar.dart';
 
 class CSDocSeedScreen extends StatefulWidget {
   const CSDocSeedScreen({super.key});
@@ -21,31 +19,18 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
   }
 
   Future<void> _startInitialization() async {
-    // 1. Setup Environment
-    final dir = await getApplicationDocumentsDirectory();
-    final isar = await Isar.open([
-      DocEntrySchema,
-      AppMetadataSchema,
-      AppNavigationSchema,
-      AppRedirectSchema,
-    ], directory: dir.path);
+    final docsIsar = await DocSyncManager.bootstrap();
+    final getIt = GetIt.instance;
 
-    // 2. Initialize the Manager
-    final syncManager = DocSyncManager(isar);
+    getIt.registerSingleton<Isar>(docsIsar, instanceName: 'docs_db');
+    getIt.registerLazySingleton(
+      () => DocSyncManager(getIt(instanceName: 'docs_db')),
+    );
 
-    // 3. Perform the MANDATORY local sync (Package -> Local)
-    // We 'await' this because the app isn't usable without the base data.
-    await syncManager.initLocalData();
-
-    // // 4. Trigger the OPTIONAL remote sync (Remote -> Local)
-    // // We do NOT 'await' this. It runs in its own isolate while the user navigates.
-    // syncManager.startBackgroundRemoteSync();
-
-    // 5. Navigation Handoff
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => CSMainScreen(isar: isar)),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => CSMainScreen()));
     }
   }
 

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:claw_shelf/core/engine/isar/app_config.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:isar/isar.dart';
 
 class DocParser {

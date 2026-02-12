@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:claw_shelf/components/markdown/card_tag.dart';
@@ -9,9 +10,8 @@ import 'package:claw_shelf/services/doc_navigation.dart';
 
 class CSDocContentPage extends StatefulWidget {
   final Id id; // Pass only the Isar ID
-  final Isar isar;
 
-  const CSDocContentPage({super.key, required this.id, required this.isar});
+  const CSDocContentPage({super.key, required this.id});
 
   @override
   State<CSDocContentPage> createState() => _CSDocContentPageState();
@@ -20,9 +20,14 @@ class CSDocContentPage extends StatefulWidget {
 class _CSDocContentPageState extends State<CSDocContentPage> {
   late Future<DocEntry?> _docFuture;
 
+  late Isar docsIsar;
+
   @override
   void initState() {
     super.initState();
+
+    final getIt = GetIt.instance;
+    docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
     // Start fetching immediately, but we will handle the display carefully
     _docFuture = _fetchDocWithDelay();
   }
@@ -33,7 +38,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
     await Future.delayed(const Duration(milliseconds: 350));
 
     // 2. Fetch the actual document from Isar
-    return await widget.isar.docEntrys.get(widget.id);
+    return await docsIsar.docEntrys.get(widget.id);
   }
 
   @override
@@ -98,7 +103,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
                     [...md.ExtensionSet.gitHubWeb.inlineSyntaxes],
                   ),
                   builders: {
-                    "Card": CardWidgetBuilder(context, isar: widget.isar),
+                    "Card": CardWidgetBuilder(context),
                     'UnknownTag': FallbackTagBuilder(),
                   },
                   onTapLink: (text, href, title) {
@@ -132,7 +137,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
       return;
     }
 
-    CSDocNavigation.navigateToDoc(context, href, widget.isar);
+    CSDocNavigation.navigateToDoc(context, href);
   }
 
   Widget _buildSkeletonLoader() {

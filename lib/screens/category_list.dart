@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
 
 class CSCategoryListPage extends StatelessWidget {
-  final Isar isar;
   final List<String> categories;
   final String lang;
   final String title;
 
   const CSCategoryListPage({
     super.key,
-    required this.isar,
     required this.categories,
     required this.lang,
     required this.title,
@@ -19,10 +18,12 @@ class CSCategoryListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final getIt = GetIt.instance;
+    final docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
     return Scaffold(
       appBar: AppBar(title: Text(title)), // Uses your custom title
       body: FutureBuilder<List<DocEntry>>(
-        future: isar.docEntrys
+        future: docsIsar.docEntrys
             .filter()
             .langEqualTo(lang)
             .and()
@@ -58,6 +59,6 @@ class CSCategoryListPage extends StatelessWidget {
 
   void _openDoc(BuildContext context, DocEntry doc) {
     // Logic to update lastAccessed and navigate
-    CSDocNavigation.open(context, isar, doc);
+    CSDocNavigation.open(context, doc);
   }
 }

@@ -1,15 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
 
 class CSSearchScreen extends StatefulWidget {
-  final Isar isar;
   final String lang;
 
-  const CSSearchScreen({super.key, required this.isar, required this.lang});
+  const CSSearchScreen({super.key, required this.lang});
 
   @override
   State<CSSearchScreen> createState() => _CSSearchScreenState();
@@ -20,6 +20,16 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
   List<DocEntry> _results = [];
   Timer? _debounce;
 
+  late Isar docsIsar;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final getIt = GetIt.instance;
+    docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
+  }
+
   void _onSearch(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () async {
@@ -29,7 +39,7 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
       }
 
       // Query across title, summary, and full content
-      final results = await widget.isar.docEntrys
+      final results = await docsIsar.docEntrys
           .filter()
           .langEqualTo(widget.lang) // Localization filter
           .and()
@@ -72,7 +82,7 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
             leading: Text(doc.emoji ?? "📄"),
             title: Text(doc.title ?? ""),
             subtitle: Text(doc.summary ?? "", maxLines: 1),
-            onTap: () => CSDocNavigation.open(context, widget.isar, doc),
+            onTap: () => CSDocNavigation.open(context, doc),
           );
         },
       ),

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:claw_shelf/core/engine/isar/app_config.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:isar/isar.dart';
 import 'package:package_documents/generate_bundle.dart';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -7,9 +8,8 @@ import 'package:claw_shelf/services/doc_navigation.dart';
 
 class CardWidgetBuilder extends MarkdownElementBuilder {
   final BuildContext context;
-  final Isar isar;
 
-  CardWidgetBuilder(this.context, {required this.isar});
+  CardWidgetBuilder(this.context);
 
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
@@ -62,19 +62,22 @@ class CardWidgetBuilder extends MarkdownElementBuilder {
     // Example: Use GoRouter or standard Navigator to find the docId from the path
     debugPrint("Navigating to: $path");
 
+    final getIt = GetIt.instance;
+    final docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
+
     // If the path is /start/wizard, you'd find the doc with docPath "start/wizard.md"
     // and push a new DocReaderPage.
 
     // Remove leading slash and find the matching doc
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
 
-    final targetDoc = isar.docEntrys
+    final targetDoc = docsIsar.docEntrys
         .filter()
         .docIdEqualTo(cleanPath.replaceAll('/', '_'))
         .findFirstSync();
 
     if (targetDoc != null) {
-      CSDocNavigation.open(context, isar, targetDoc);
+      CSDocNavigation.open(context, targetDoc);
     }
   }
 

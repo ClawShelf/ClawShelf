@@ -1,198 +1,141 @@
 import 'dart:convert';
-import 'dart:isolate';
-import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:isar/isar.dart';
-import 'package:claw_shelf/core/engine/isar/document.dart'; // Models
-import 'package:claw_shelf/core/engine/isar/app_config.dart'; // Models
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:isar/isar.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
 
 class DocSyncManager {
-  final Isar isar;
-  static const remoteUrl =
-      "https://your-user.github.io/molt-manual/master_doc.json";
+  late Isar isar;
+  final String dbName = 'default';
+
+  // Update these URLs to your actual endpoints
+  static const remoteVersionUrl = "https://your-server.com/docs/version.json";
+  static const remoteDbBaseUrl = "https://your-server.com/docs/";
 
   DocSyncManager(this.isar);
 
-  /// --- THE MAIN INITIALIZER ---
-  Future<void> initLocalData() async {
+  /// 🚀 BOOTSTRAP: Call this in your main()
+  static Future<Isar> bootstrap() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final localDbFile = File('${dir.path}/default.isar');
+
+    // 1. Get Build Number of the App itself (from pubspec.yaml)
     final info = await PackageInfo.fromPlatform();
-    final int packageBuild = int.parse(info.buildNumber);
+    final packageBuild = int.parse(info.buildNumber);
 
-    final meta = await isar.appMetadatas
-        .filter()
-        .keyEqualTo("synced_build")
-        .findFirst();
-    final int localBuild = meta?.value ?? 0;
+    // 2. Peek at the Local DB build number WITHOUT opening the full Isar yet
+    // We use a small sidecar file or a metadata-only Isar peek
+    final localBuild = await _readLocalMetadataBuild(dir.path);
 
-    if (localBuild < packageBuild) {
-      // 1. Load ALL asset files here
-      final String docJson = await rootBundle.loadString(
-        'assets/master_doc.json',
+    // 3. DECISION: Is the Package (Store Update) newer than our Local Data?
+    if (!(await localDbFile.exists()) || packageBuild > localBuild) {
+      print(
+        "📦 Package (v$packageBuild) is newer than Local (v$localBuild). Seeding...",
       );
-      final String configJson = await rootBundle.loadString(
-        'assets/app_config.json',
-      );
-
-      final dir = await getApplicationDocumentsDirectory();
-
-      // 2. Offload everything to the worker
-      await Isolate.run(
-        () => _backgroundWorker(
-          dir.path,
-          docJson,
-          configJson,
-          packageBuild,
-          null, // No remote hash for asset seed
-        ),
-      );
+      final data = await rootBundle.load('assets/default.isar');
+      await localDbFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
     }
+
+    // 4. Open the winning database
+    return await Isar.open(
+      [
+        DocEntrySchema,
+        AppMetadataSchema,
+        AppNavigationSchema,
+        AppRedirectSchema,
+        AppImageSchema,
+      ],
+      name: 'default',
+      directory: dir.path,
+    );
   }
 
-  void startBackgroundRemoteSync() {
-    _checkForUpdates();
-  }
-
-  Future<void> _checkForUpdates() async {
+  /// 🌐 REMOTE SYNC: Call this after app is loaded
+  Future<void> syncWithRemote() async {
     try {
-      final response = await http.head(Uri.parse(remoteUrl));
-      final String remoteHash =
-          response.headers['etag']?.replaceAll('"', '') ?? "";
+      // 1. Fetch the remote manifest
+      final response = await http.get(Uri.parse(remoteVersionUrl));
+      if (response.statusCode != 200) return;
 
-      final meta = await isar.appMetadatas
+      final remoteJson = jsonDecode(response.body);
+      final remoteBuild = remoteJson['build_number'];
+      final remoteHash = remoteJson['hash'];
+
+      // 2. Check current Local state
+      final localMeta = await isar.appMetadatas
           .filter()
-          .keyEqualTo("docs_hash")
+          .keyEqualTo("build_number")
           .findFirst();
-      if (meta?.valueString != remoteHash) {
-        final fullDoc = await http.get(Uri.parse(remoteUrl));
-        final dir = await getApplicationDocumentsDirectory();
+      final localBuild = localMeta?.value ?? 0;
+      final localHash = localMeta?.valueString ?? "";
 
-        // Background sync: only updates docs, leaves Nav/Redirects as-is
-        await Isolate.run(
-          () =>
-              _backgroundWorker(dir.path, fullDoc.body, null, null, remoteHash),
+      // 3. Comparison Logic
+      if (remoteBuild > localBuild && remoteHash != localHash) {
+        print("☁️ Remote (v$remoteBuild) is newer. Downloading binary...");
+        await _downloadAndReplace(
+          remoteJson['db_filename'],
+          remoteBuild,
+          remoteHash,
         );
       }
     } catch (e) {
-      debugPrint("Sync skipped: $e");
+      print("⚠️ Remote sync skipped: $e");
     }
   }
-}
 
-/// --- THE ISOLATE WORKER ---
-Future<void> _backgroundWorker(
-  String path,
-  String docJson,
-  String? configJson,
-  int? build,
-  String? hash,
-) async {
-  final workerIsar = await Isar.open(
-    [DocEntrySchema, AppMetadataSchema, AppNavigationSchema, AppRedirectSchema],
-    directory: path,
-    name: 'default',
-  );
+  /// 🔄 THE SWAP: Safe replacement of the binary file
+  Future<void> _downloadAndReplace(
+    String filename,
+    int build,
+    String hash,
+  ) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final tempFile = File('${dir.path}/$dbName.isar.tmp');
+    final currentDbFile = File('${dir.path}/$dbName.isar');
 
-  final docData = jsonDecode(docJson);
-  final List docs = docData['docs'];
-  final String finalHash = hash ?? md5.convert(utf8.encode(docJson)).toString();
+    // 1. Download binary
+    final response = await http.get(Uri.parse("$remoteDbBaseUrl$filename"));
+    await tempFile.writeAsBytes(response.bodyBytes);
 
-  // 1. Parse Docs
-  final docEntries = docs.map((d) {
-    return DocEntry()
-      ..docId = d['id']
-      ..docPath = d['path']
-      ..content = d['content'] ?? ""
-      ..title = d['title'] ?? ""
-      ..emoji = d['emoji'] ?? "📝"
-      ..category = d['category'] ?? "general"
-      ..lang = d['lang'] ?? 'en'
-      ..summary = d['summary'] ?? ''
-      ..readWhen =
-          (d['read_when'] as List?)?.map((e) => e.toString()).toList() ?? []
-      ..lastUpdated = DateTime.now();
-  }).toList();
+    // 2. Atomic Swap
+    await isar.close();
+    if (await currentDbFile.exists()) await currentDbFile.delete();
+    await tempFile.rename(currentDbFile.path);
 
-  // 2. Parse Config (Only if provided during local seed)
-  List<AppNavigation>? navItems;
-  List<AppRedirect>? redirects;
+    // 3. Re-open and stamp metadata
+    isar = await Isar.open(
+      [
+        DocEntrySchema,
+        AppMetadataSchema,
+        AppNavigationSchema,
+        AppRedirectSchema,
+        AppImageSchema,
+      ],
+      name: dbName,
+      directory: dir.path,
+    );
 
-  if (configJson != null) {
-    final configData = jsonDecode(configJson);
-
-    // 1. Map Navigation (Recursive)
-    navItems = ((configData['navigation'] as Map<String, dynamic>).keys).map((
-      languageCode,
-    ) {
-      final navJson = configData['navigation'][languageCode];
-      return AppNavigation()
-        ..languageCode = languageCode
-        ..tabs = (navJson as List).map((tabJson) {
-          return NavTab()
-            ..title = tabJson['tab_title']
-            ..groups = (tabJson['groups'] as List).map((groupJson) {
-              return NavGroup()
-                ..title = groupJson['group_title']
-                ..nodes = (groupJson['pages'] as List)
-                    .map((nodeJson) => _mapNavNode(nodeJson))
-                    .toList();
-            }).toList();
-        }).toList();
-    }).toList();
-
-    // 2. Map Redirects (Handling those 'late' fields)
-    redirects = (configData['redirects'] as List).map((r) {
-      return AppRedirect()
-        ..source =
-            r['source'] ??
-            "" // FIX: Ensure late fields are set
-        ..destination =
-            r['destination'] ?? ""; // FIX: Ensure late fields are set
-    }).toList();
-  }
-
-  // 3. ATOMIC WRITE
-  workerIsar.writeTxnSync(() {
-    workerIsar.docEntrys.clearSync();
-    workerIsar.docEntrys.putAllSync(docEntries);
-
-    if (navItems != null) {
-      workerIsar.appNavigations.clearSync();
-      workerIsar.appNavigations.putAllSync(navItems);
-    }
-
-    if (redirects != null) {
-      workerIsar.appRedirects.clearSync();
-      workerIsar.appRedirects.putAllSync(redirects);
-    }
-
-    if (build != null) {
-      workerIsar.appMetadatas.putSync(
+    await isar.writeTxn(() async {
+      await isar.appMetadatas.put(
         AppMetadata()
-          ..key = "synced_build"
+          ..key = "build_number"
           ..value = build,
       );
-    }
-    workerIsar.appMetadatas.putSync(
-      AppMetadata()
-        ..key = "docs_hash"
-        ..valueString = finalHash,
-    );
-  });
+      await isar.appMetadatas.put(
+        AppMetadata()
+          ..key = "docs_hash"
+          ..valueString = hash,
+      );
+    });
+  }
 
-  await workerIsar.close();
-}
-
-// Helper function for recursion
-NavNode _mapNavNode(Map<String, dynamic> json) {
-  return NavNode()
-    ..type = json['type']
-    ..title = json['title']
-    ..path = json['path']
-    ..children = json['children'] != null
-        ? (json['children'] as List).map((child) => _mapNavNode(child)).toList()
-        : null;
+  /// Helper to peek at metadata without opening full Isar (uses a tiny separate file)
+  static Future<int> _readLocalMetadataBuild(String path) async {
+    final metaFile = File('$path/build_marker.txt');
+    if (!await metaFile.exists()) return 0;
+    return int.tryParse(await metaFile.readAsString()) ?? 0;
+  }
 }

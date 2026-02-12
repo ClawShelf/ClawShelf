@@ -1,15 +1,15 @@
+import 'package:claw_shelf/core/engine/isar/user_setting.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:claw_shelf/components/recent_card.dart';
-import 'package:claw_shelf/core/engine/isar/app_config.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/screens/category_list.dart';
 import 'package:claw_shelf/screens/search.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
 
 class CSMainScreen extends StatefulWidget {
-  final Isar isar;
-  const CSMainScreen({super.key, required this.isar});
+  const CSMainScreen({super.key});
 
   @override
   State<CSMainScreen> createState() => _CSMainScreenState();
@@ -17,16 +17,21 @@ class CSMainScreen extends StatefulWidget {
 
 class _CSMainScreenState extends State<CSMainScreen> {
   AppNavigation? _config;
+  late Isar docsIsar;
+  late Isar prefsIsar;
 
   @override
   void initState() {
     super.initState();
+    final getIt = GetIt.instance;
+    docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
+    prefsIsar = getIt.get<Isar>(instanceName: 'prefs_db');
     _loadConfig();
   }
 
   // Load the navigation tree from Isar
   Future<void> _loadConfig() async {
-    final config = await widget.isar.appNavigations.where().findFirst();
+    final config = await docsIsar.appNavigations.where().findFirst();
     setState(() => _config = config);
   }
 
@@ -110,9 +115,7 @@ class _CSMainScreenState extends State<CSMainScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => CSSearchScreen(isar: widget.isar, lang: 'en'),
-          ),
+          MaterialPageRoute(builder: (context) => CSSearchScreen(lang: 'en')),
         );
       },
       child: Hero(
@@ -203,10 +206,7 @@ class _CSMainScreenState extends State<CSMainScreen> {
                       dense: true,
                       title: Text(
                         node.title ??
-                            CSDocNavigation.findDocByPath(
-                              node.path!,
-                              widget.isar,
-                            )?.title ??
+                            CSDocNavigation.findDocByPath(node.path!)?.title ??
                             "Page",
                       ),
                       onTap: () {
@@ -225,7 +225,7 @@ class _CSMainScreenState extends State<CSMainScreen> {
         dense: true,
         title: Text(
           node.title ??
-              CSDocNavigation.findDocByPath(node.path!, widget.isar)?.title ??
+              CSDocNavigation.findDocByPath(node.path!)?.title ??
               "Page",
         ),
         onTap: () {
@@ -239,14 +239,7 @@ class _CSMainScreenState extends State<CSMainScreen> {
 
   void _openDoc(String? path) async {
     if (path == null) return;
-    CSDocNavigation.navigateToDoc(context, path, widget.isar);
-    // final doc = await widget.isar.docEntrys
-    //     .filter()
-    //     .docIdEqualTo(path.replaceAll('/', '_'))
-    //     .findFirst();
-    // if (doc != null && mounted) {
-    //   MMDocNavigation.open(context, widget.isar, doc);
-    // }
+    CSDocNavigation.navigateToDoc(context, path);
   }
 
   Widget _buildBentoCard(
@@ -278,7 +271,6 @@ class _CSMainScreenState extends State<CSMainScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => CSCategoryListPage(
-                  isar: widget.isar,
                   title: title,
                   categories:
                       categories, // Maps to your Python 'category' logic
@@ -314,12 +306,11 @@ class _CSMainScreenState extends State<CSMainScreen> {
   }
 
   Widget _biuldRecentlyViewed() {
-    return StreamBuilder<List<DocEntry>>(
+    return StreamBuilder<List<HistoryEntry>>(
       // Watch the DB: Sort by lastAccessed, limit to 5 most recent
-      stream: widget.isar.docEntrys
-          .filter()
-          .lastAccessedIsNotNull()
-          .sortByLastAccessedDesc() // Only show docs that have actually been opened
+      stream: prefsIsar.historyEntrys
+          .where()
+          .sortByLastViewedDesc()
           .limit(5)
           .watch(fireImmediately: true),
       builder: (context, snapshot) {
@@ -353,11 +344,18 @@ class _CSMainScreenState extends State<CSMainScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    final doc = docs[index];
+                    final docId = docs[index];
+                    final doc = docsIsar.docEntrys
+                        .filter()
+                        .docIdEqualTo(docId.docId)
+                        .findFirstSync();
+                    if (doc == null) {
+                      // or delete that missing history entry
+                      return Container();
+                    }
                     return RecentDocCard(
                       doc: doc,
-                      onTap: () =>
-                          CSDocNavigation.open(context, widget.isar, doc),
+                      onTap: () => CSDocNavigation.open(context, doc),
                     );
                   },
                 ),
