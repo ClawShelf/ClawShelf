@@ -1,168 +1,229 @@
 import 'dart:io';
-import 'dart:convert';
+import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:crypto/crypto.dart';
+import 'package:isar/isar.dart';
 
-// Configuration
-const String docsRoot = './openclaw/docs';
-const String imageDest = './assets/images';
-const String outputFile = './assets/master_doc.json';
+class DocProcessor {
+  final Isar isar;
+  final String docsRoot;
+  final String imageDest;
 
-// Simple helper for MD5 hashing
-String getFileHash(File file) {
-  return md5.convert(file.readAsBytesSync()).toString();
-}
+  DocProcessor({
+    required this.isar,
+    required this.docsRoot,
+    required this.imageDest,
+  });
 
-String processMatch(String originalImgPath, String relativeFilePath) {
-  if (originalImgPath.startsWith(RegExp(r'http|https|data:'))) {
+  /// The main entry point to sync the entire folder to Isar
+  Future<void> syncAll() async {
+    final dir = Directory(docsRoot);
+    if (!await dir.exists()) {
+      throw Exception("Docs root not found at $docsRoot");
+    }
+
+    final List<DocEntry> entries = [];
+    final stopwatch = Stopwatch()..start();
+
+    // 1. Walk through the directory for .md files
+    await for (final entity in dir.list(recursive: true)) {
+      if (entity is File && p.extension(entity.path) == '.md') {
+        final relativePath = p.relative(entity.path, from: docsRoot);
+        final entry = await _processFile(entity, relativePath);
+        entries.add(entry);
+      }
+    }
+
+    // 2. Perform Batch Write
+    await isar.writeTxn(() async {
+      // Upsert all processed documents
+      // await isar.docEntrys.putAll(entries);
+      for (var x in entries) {
+        try {
+          await isar.docEntrys.put(x);
+        } catch (e) {
+          print("Error writting: $e");
+        }
+      }
+
+      // Update Metadata to track when the last sync happened
+      final syncMeta = AppMetadata()
+        ..key = "last_docs_sync"
+        ..value = DateTime.now().millisecondsSinceEpoch
+        ..valueString = "Version: ${DateTime.now().toIso8601String()}";
+
+      await isar.appMetadatas.put(syncMeta);
+    });
+
+    stopwatch.stop();
+    print(
+      "✅ Synced ${entries.length} documents in ${stopwatch.elapsedMilliseconds}ms",
+    );
+  }
+
+  Future<DocEntry> _processFile(File file, String relativePath) async {
+    final rawContent = await file.readAsString();
+    final stats = await file.lastModified();
+
+    // 1. Metadata Extraction (YAML + Fallbacks)
+    final extraction = _extractMetadata(rawContent, relativePath);
+    final meta = extraction['meta'] as Map<String, dynamic>;
+
+    // 2. Image Syncing & Markdown Cleaning
+    final finalContent = _syncImages(
+      extraction['content'] as String,
+      relativePath,
+    );
+
+    return DocEntry()
+      ..docId = relativePath
+          .replaceAll(RegExp(r'/|\\'), '_')
+          .replaceAll('.md', '')
+      ..docPath = relativePath
+      ..content = finalContent
+      ..title = meta['title']
+      ..emoji = meta['emoji'] ?? "📄"
+      ..category = meta['category']
+      ..lang = meta['lang']
+      ..readWhen = meta['read_when']
+      ..lastUpdated = stats;
+  }
+
+  String _syncImages(String content, String relativeFilePath) {
+    var workingContent = content;
+
+    // Matches both <img src="..."> and ![alt](path)
+    final imgPattern = RegExp(r'<(img|!\[)[^>]*?(src="|\]\()([^"> \)]+)');
+
+    workingContent = workingContent.replaceAllMapped(imgPattern, (match) {
+      final oldSrc = match.group(3)!;
+
+      // Skip network images
+      if (oldSrc.startsWith(RegExp(r'http|https|data:'))) {
+        return match.group(0)!;
+      }
+
+      final newFilename = _copyAndHashImage(oldSrc, relativeFilePath);
+
+      // Reconstruct the tag with the flattened image path
+      if (match.group(1) == 'img') {
+        return '<img src="$newFilename"';
+      } else {
+        // Keeps the existing Alt text if present
+        return '![${match.group(2)!.replaceAll('](', '')}]($newFilename';
+      }
+    });
+
+    // Strip Mintlify-specific UI wrappers that aren't standard Markdown
+    final customTags = [
+      'Columns',
+      'CardGroup',
+      'Steps',
+      'AccordionGroup',
+      'Tabs',
+      'Card',
+    ];
+    for (var tag in customTags) {
+      workingContent = workingContent.replaceAll(RegExp('</?$tag[^>]*>'), '');
+    }
+
+    return workingContent;
+  }
+
+  String _copyAndHashImage(String originalImgPath, String relativeFilePath) {
+    final mdDir = p.dirname(p.join(docsRoot, relativeFilePath));
+    final searchPath = originalImgPath.replaceFirst('/', '');
+
+    var fullSrcPath = p.normalize(p.join(mdDir, originalImgPath));
+    if (!File(fullSrcPath).existsSync()) {
+      fullSrcPath = p.normalize(p.join(docsRoot, searchPath));
+    }
+
+    final srcFile = File(fullSrcPath);
+    if (srcFile.existsSync()) {
+      final imgFilename = p.basename(fullSrcPath);
+      final destPath = p.join(imageDest, imgFilename);
+      final destFile = File(destPath);
+
+      // Only copy if file is new or modified (hash check)
+      if (!destFile.existsSync() || _getHash(srcFile) != _getHash(destFile)) {
+        Directory(imageDest).createSync(recursive: true);
+        srcFile.copySync(destPath);
+      }
+      return imgFilename;
+    }
     return originalImgPath;
   }
 
-  final mdDir = p.dirname(p.join(docsRoot, relativeFilePath));
-  final searchPath = originalImgPath.replaceFirst('/', '');
-  
-  var fullSrcPath = p.normalize(p.join(mdDir, originalImgPath));
-  if (!File(fullSrcPath).existsSync()) {
-    fullSrcPath = p.normalize(p.join(docsRoot, searchPath));
-  }
+  String _getHash(File file) => md5.convert(file.readAsBytesSync()).toString();
 
-  final srcFile = File(fullSrcPath);
-  if (srcFile.existsSync()) {
-    final imgFilename = p.basename(fullSrcPath);
-    final destPath = p.join(imageDest, imgFilename);
-    final destFile = File(destPath);
+  Map<String, dynamic> _extractMetadata(String content, String relativePath) {
+    final parts = relativePath.replaceAll('\\', '/').split('/');
 
-    // Sync image if hash differs or doesn't exist
-    if (!destFile.existsSync() || getFileHash(srcFile) != getFileHash(destFile)) {
-      Directory(imageDest).createSync(recursive: true);
-      srcFile.copySync(destPath);
-    }
-    return imgFilename;
-  }
-  return originalImgPath;
-}
+    // Logic: If path starts with zh-CN, lang is zh. Otherwise en.
+    String lang = parts[0] == 'zh-CN' ? 'zh' : 'en';
 
-String syncAndFlattenImages(String content, String relativeFilePath) {
-  var workingContent = content;
+    // Category is usually the folder name
+    String category = parts.length > (lang == 'zh' ? 2 : 1)
+        ? parts[lang == 'zh' ? 1 : 0]
+        : 'general';
 
-  // 1. Process HTML <img> Tags
-  final htmlImgPattern = RegExp(r'<img\s+[^>]*?src="([^"]+)"[^>]*?>');
-  workingContent = workingContent.replaceAllMapped(htmlImgPattern, (match) {
-    final fullTag = match.group(0)!;
-    final oldSrc = match.group(1)!;
-    final newFilename = processMatch(oldSrc, relativeFilePath);
+    final yamlPattern = RegExp(r'^---\s*\n(.*?)\n---\s*\n', dotAll: true);
+    final match = yamlPattern.firstMatch(content);
 
-    if (fullTag.contains('dark:hidden')) return "\n\n![Logo]($newFilename)\n\n";
-    if (fullTag.contains('dark:block')) return "";
-    return "\n\n![Image]($newFilename)\n\n";
-  });
+    Map<String, dynamic> meta = {
+      "title": p
+          .basenameWithoutExtension(relativePath)
+          .replaceAll(RegExp(r'[-_]'), ' '),
+      "category": category,
+      "lang": lang,
+      "read_when": <String>[],
+    };
 
-  // 2. Process Standard Markdown Images
-  final mdImgPattern = RegExp(r'!\[(.*?)\]\((.*?)\)');
-  workingContent = workingContent.replaceAllMapped(mdImgPattern, (match) {
-    return "![${match.group(1)}](${processMatch(match.group(2)!, relativeFilePath)})";
-  });
+    String cleanContent = content;
+    if (match != null) {
+      final rawYaml = match.group(1)!;
+      try {
+        final yaml = loadYaml(rawYaml);
+        if (yaml is YamlMap) {
+          yaml.forEach((k, v) {
+            if (k == 'read_when') {
+              if (v is YamlList) {
+                // Convert YamlList to a standard List<String>
+                meta[k] = v.map((item) => item.toString()).toList();
+              } else if (v is String) {
+                meta[k] = [v];
+              } else {
+                meta[k] = <String>[];
+              }
+            }
+          });
+        }
+      } catch (e) {
+        // FALLBACK: If YAML is malformed due to colons in bullets
+        print(
+          "⚠️ YAML parse failed for $relativePath, attempting regex fallback.",
+        );
 
-  // 3. Set Images Free (Remove wrappers)
-  final trappedImgPattern = RegExp(r'<(p|div)[^>]*?>\s*(!\[.*?\]\(.*?\))\s*</(p|div)>');
-  workingContent = workingContent.replaceAll(trappedImgPattern, '\n\n\$2\n\n');
+        // Look specifically for read_when block and grab lines starting with '-'
+        final readWhenRegex = RegExp(r'read_when:\s*\n((?:\s*- .*\n?)+)');
+        final rwMatch = readWhenRegex.firstMatch(rawYaml);
 
-  // 4. Transpile Mintlify tags
-  final silentWrappers = ['Columns', 'CardGroup', 'Steps', 'AccordionGroup', 'Tabs'];
-  for (var tag in silentWrappers) {
-    workingContent = workingContent.replaceAll(RegExp('</?$tag[^>]*>'), '');
-  }
-  
-  // Escape placeholders like <id>
-  workingContent = workingContent.replaceAllMapped(
-    RegExp(r'(?<!`|<)<([a-z0-9_-]+)>(?!`|>)'), 
-    (m) => '`<${m.group(1)}>`'
-  );
-
-  return workingContent;
-}
-
-Map<String, dynamic> extractMetadata(String content, String relativePath) {
-  final parts = relativePath.replaceAll('\\', '/').split('/');
-  String lang = 'en';
-  String category = 'general';
-
-  if (parts[0] == 'zh-CN') {
-    lang = 'zh';
-    category = parts.length > 2 ? parts[1] : 'general';
-  } else {
-    category = parts.length > 1 ? parts[0] : 'general';
-  }
-
-  if (category.contains('.')) category = 'general';
-
-  final filename = parts.last;
-  Map<String, dynamic> metadata = {
-    "title": filename.replaceAll('.md', '').split(RegExp(r'(?=[A-Z])|_|-')).join(' '),
-    "emoji": "📄",
-    "category": category,
-    "lang": lang,
-    "read_when": []
-  };
-
-  // YAML Extraction
-  final yamlPattern = RegExp(r'^---\s*\n(.*?)\n---\s*\n', dotAll: true);
-  final yamlMatch = yamlPattern.firstMatch(content);
-  String cleanContent = content;
-
-  if (yamlMatch != null) {
-    try {
-      final yamlData = loadYaml(yamlMatch.group(1)!);
-      if (yamlData is YamlMap) {
-        yamlData.forEach((k, v) {
-          if (k == "read_when") {
-             metadata["read_when"] = v is String ? [v] : (v as List).toList();
-          } else {
-             metadata[k.toString()] = v;
-          }
-        });
+        if (rwMatch != null) {
+          final lines = rwMatch
+              .group(1)!
+              .split('\n')
+              .map((s) => s.trim())
+              .where((s) => s.startsWith('-'))
+              .map((s) => s.replaceFirst('-', '').trim())
+              .toList();
+          meta['read_when'] = lines;
+        }
       }
-      cleanContent = content.substring(yamlMatch.end).trim();
-    } catch (e) { /* ignore yaml errors */ }
-  }
-
-  // H1 Fallback
-  final h1Pattern = RegExp(r'^#\s+(.*)', multiLine: true);
-  final h1Match = h1Pattern.firstMatch(cleanContent);
-  if (h1Match != null && metadata["title"] != h1Match.group(1)!.trim()) {
-    metadata["title"] = h1Match.group(1)!.trim();
-  }
-
-  return {"meta": metadata, "content": cleanContent};
-}
-
-void main() async {
-  final List<Map<String, dynamic>> docEntries = [];
-  final dir = Directory(docsRoot);
-
-  await for (final entity in dir.list(recursive: true)) {
-    if (entity is File && p.extension(entity.path) == '.md') {
-      final relativePath = p.relative(entity.path, from: docsRoot);
-      final rawContent = await entity.readAsString();
-
-      final extraction = extractMetadata(rawContent, relativePath);
-      final finalContent = syncAndFlattenImages(extraction["content"], relativePath);
-
-      docEntries.add({
-        "id": relativePath.replaceAll(RegExp(r'/|\\'), '_').replaceAll('.md', ''),
-        "path": relativePath,
-        "content": finalContent,
-        ...extraction["meta"]
-      });
+      cleanContent = content.substring(match.end).trim();
     }
+
+    return {"meta": meta, "content": cleanContent};
   }
-
-  final masterData = {
-    "version": DateTime.now().toIso8601String(),
-    "docs": docEntries
-  };
-
-  File(outputFile).writeAsStringSync(jsonEncode(masterData));
-  print("✅ Processed ${docEntries.length} files into $outputFile");
 }

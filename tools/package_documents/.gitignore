@@ -2,3 +2,7 @@
 # Created by `dart pub`
 .dart_tool/
 /bin/*.so
+
+# default output
+*isar*
+img/

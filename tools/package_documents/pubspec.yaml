@@ -16,8 +16,13 @@ dependencies:
   isar: ^3.1.0+1
   isar_flutter_libs:
     git:
-      url: https://github.com/MrLittleWhite/isar_flutter_libs.git
+      url: https://github.com/ClawShelf/isar
+      ref: 3.1.0-buildfix
+      path: packages/isar_flutter_libs
+      
   path_provider: ^2.1.5
+  args: ^2.7.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   lints: ^6.0.0

@@ -49,3 +49,27 @@ class AppMetadata {
   int? value;
   String? valueString;
 }
+
+@collection
+class AppImage {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true, replace: true)
+  late String filename; // e.g., "logo_dark.png"
+
+  @Index()
+  late String localPath; // Absolute path to the file in app docs
+
+  late String originalSource; // The original relative path from docs.json
+
+  // Link to the DocEntry it belongs to (Optional but helpful)
+  final docEntries = IsarLinks<DocEntry>();
+
+  // Metadata for the UI
+  int? width;
+  int? height;
+  String? mimeType;
+
+  @Index()
+  DateTime? lastSynced;
+}
