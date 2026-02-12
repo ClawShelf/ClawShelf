@@ -12,20 +12,44 @@ class DocParser {
   Future<void> updateDocs() async {
     final String docsJsonPath = '$openClawPath/docs/docs.json';
     final file = File(docsJsonPath);
-    
+
     if (!await file.exists()) {
       throw Exception("docs.json not found at $docsJsonPath");
     }
 
     final Map<String, dynamic> data = jsonDecode(await file.readAsString());
-    
-    // 1. Recursive Node Processor (Handles nested groups)
+
+    // --- BUILD-TIME REDIRECT RESOLUTION ---
+    // Create a local map for instant lookup during parsing
+    final Map<String, String> redirectMap = {};
+    final List<dynamic> redirectsData = data['redirects'] ?? [];
+    final List<AppRedirect> redirectList = [];
+
+    for (var r in redirectsData) {
+      if (r is Map && r.containsKey('source') && r.containsKey('destination')) {
+        redirectMap[r['source']] = r['destination'];
+        // We still store them in the list if you want to keep the AppRedirect collection
+        redirectList.add(
+          AppRedirect()
+            ..source = r['source']
+            ..destination = r['destination'],
+        );
+      }
+    }
+
+    // 1. Recursive Node Processor with Resolution logic
     List<NavNode> processNodes(List<dynamic> pagesList) {
       return pagesList.map((item) {
         if (item is String) {
+          // Normalize path to match redirect keys (usually starts with /)
+          final String normalizedPath = item.startsWith('/') ? item : '/$item';
+
+          // Resolve: if redirectMap has the path, use destination, else use original
+          final String finalPath = redirectMap[normalizedPath] ?? item;
+
           return NavNode()
             ..type = "page"
-            ..path = item;
+            ..path = finalPath;
         } else {
           return NavNode()
             ..type = "group"
@@ -35,34 +59,26 @@ class DocParser {
       }).toList();
     }
 
-    // 2. Prepare Collections
+    // 2. Prepare Navigation Collections
     final List<AppNavigation> navList = [];
-    final List<AppRedirect> redirectList = [];
-
-    // Process Redirects
-    final List<dynamic> redirectsData = data['redirects'] ?? [];
-    for (var r in redirectsData) {
-      if (r is Map && r.containsKey('source') && r.containsKey('destination')) {
-        redirectList.add(AppRedirect()
-          ..source = r['source']
-          ..destination = r['destination']);
-      }
-    }
-
-    // Process Languages & Navigation
     final List<dynamic> languages = data['navigation']?['languages'] ?? [];
+
     for (var lang in languages) {
       final appNav = AppNavigation()
         ..languageCode = lang['language']
         ..tabs = [];
-      
+
       for (var tab in (lang['tabs'] ?? [])) {
-        final navTab = NavTab()..title = tab['tab']..groups = [];
-        
+        final navTab = NavTab()
+          ..title = tab['tab']
+          ..groups = [];
+
         for (var group in (tab['groups'] ?? [])) {
-          navTab.groups!.add(NavGroup()
-            ..title = group['group']
-            ..nodes = processNodes(group['pages'] ?? []));
+          navTab.groups!.add(
+            NavGroup()
+              ..title = group['group']
+              ..nodes = processNodes(group['pages'] ?? []),
+          );
         }
         appNav.tabs.add(navTab);
       }
@@ -71,15 +87,18 @@ class DocParser {
 
     // 3. Atomic Write to Isar
     await isar.writeTxn(() async {
-      // Clear old navigation and redirects to prevent duplicates
+      // Clear old data
       await isar.appNavigations.clear();
       await isar.appRedirects.clear();
 
-      // Batch insert new data
+      // Batch insert resolved data
       await isar.appNavigations.putAll(navList);
       await isar.appRedirects.putAll(redirectList);
     });
-    
-    print("Parsed ${navList.length} languages and ${redirectList.length} redirects.");
+
+    print(
+      "✅ Build-time resolution complete: ${navList.length} languages processed.",
+    );
+    print("🔗 ${redirectList.length} redirects mapped into navigation tree.");
   }
 }
