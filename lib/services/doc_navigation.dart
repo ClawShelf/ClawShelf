@@ -1,3 +1,4 @@
+import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -7,8 +8,7 @@ import 'package:claw_shelf/screens/doc_content.dart';
 
 class CSDocNavigation {
   static void open(BuildContext context, DocEntry doc) {
-    final getIt = GetIt.instance;
-    final settingsRepo = getIt.get<SettingsRepository>();
+    final settingsRepo = GetIt.instance<SettingsRepository>();
 
     // We don't 'await' here so the UI transitions immediately
     settingsRepo.addToHistory(doc);
@@ -23,8 +23,7 @@ class CSDocNavigation {
   static DocEntry? findDocByPath(String path) {
     if (path.isEmpty) return null;
 
-    final getIt = GetIt.instance;
-    final docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
+    final docsIsar = GetIt.instance<Isar>(instanceName: docsIsarKey);
 
     // 1. Normalize the path
     // Remove leading/trailing slashes and lower-case it

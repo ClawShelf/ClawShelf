@@ -1,3 +1,4 @@
+import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
@@ -18,8 +19,7 @@ class CSCategoryListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final getIt = GetIt.instance;
-    final docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
+    final docsIsar = GetIt.instance<Isar>(instanceName: docsIsarKey);
     return Scaffold(
       appBar: AppBar(title: Text(title)), // Uses your custom title
       body: FutureBuilder<List<DocEntry>>(

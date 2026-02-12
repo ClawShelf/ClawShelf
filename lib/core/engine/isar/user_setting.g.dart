@@ -969,8 +969,13 @@ const HistoryEntrySchema = CollectionSchema(
       name: r'lastViewed',
       type: IsarType.dateTime,
     ),
-    r'title': PropertySchema(
+    r'summary': PropertySchema(
       id: 3,
+      name: r'summary',
+      type: IsarType.string,
+    ),
+    r'title': PropertySchema(
+      id: 4,
       name: r'title',
       type: IsarType.string,
     )
@@ -1010,8 +1015,24 @@ int _historyEntryEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.docId.length * 3;
-  bytesCount += 3 + object.emoji.length * 3;
-  bytesCount += 3 + object.title.length * 3;
+  {
+    final value = object.emoji;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.summary;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.title;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -1024,7 +1045,8 @@ void _historyEntrySerialize(
   writer.writeString(offsets[0], object.docId);
   writer.writeString(offsets[1], object.emoji);
   writer.writeDateTime(offsets[2], object.lastViewed);
-  writer.writeString(offsets[3], object.title);
+  writer.writeString(offsets[3], object.summary);
+  writer.writeString(offsets[4], object.title);
 }
 
 HistoryEntry _historyEntryDeserialize(
@@ -1035,10 +1057,11 @@ HistoryEntry _historyEntryDeserialize(
 ) {
   final object = HistoryEntry();
   object.docId = reader.readString(offsets[0]);
-  object.emoji = reader.readString(offsets[1]);
+  object.emoji = reader.readStringOrNull(offsets[1]);
   object.id = id;
   object.lastViewed = reader.readDateTime(offsets[2]);
-  object.title = reader.readString(offsets[3]);
+  object.summary = reader.readStringOrNull(offsets[3]);
+  object.title = reader.readStringOrNull(offsets[4]);
   return object;
 }
 
@@ -1052,11 +1075,13 @@ P _historyEntryDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
       return (reader.readDateTime(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
+    case 4:
+      return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -1390,8 +1415,26 @@ extension HistoryEntryQueryFilter
     });
   }
 
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      emojiIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'emoji',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      emojiIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'emoji',
+      ));
+    });
+  }
+
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition> emojiEqualTo(
-    String value, {
+    String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1405,7 +1448,7 @@ extension HistoryEntryQueryFilter
 
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
       emojiGreaterThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1420,7 +1463,7 @@ extension HistoryEntryQueryFilter
   }
 
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition> emojiLessThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1435,8 +1478,8 @@ extension HistoryEntryQueryFilter
   }
 
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition> emojiBetween(
-    String lower,
-    String upper, {
+    String? lower,
+    String? upper, {
     bool includeLower = true,
     bool includeUpper = true,
     bool caseSensitive = true,
@@ -1633,8 +1676,180 @@ extension HistoryEntryQueryFilter
     });
   }
 
-  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition> titleEqualTo(
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'summary',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'summary',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'summary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'summary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'summary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'summary',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryStartsWith(
     String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'summary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'summary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'summary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'summary',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'summary',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      summaryIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'summary',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      titleIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'title',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
+      titleIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'title',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition> titleEqualTo(
+    String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1648,7 +1863,7 @@ extension HistoryEntryQueryFilter
 
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition>
       titleGreaterThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1663,7 +1878,7 @@ extension HistoryEntryQueryFilter
   }
 
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition> titleLessThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1678,8 +1893,8 @@ extension HistoryEntryQueryFilter
   }
 
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterFilterCondition> titleBetween(
-    String lower,
-    String upper, {
+    String? lower,
+    String? upper, {
     bool includeLower = true,
     bool includeUpper = true,
     bool caseSensitive = true,
@@ -1813,6 +2028,18 @@ extension HistoryEntryQuerySortBy
     });
   }
 
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterSortBy> sortBySummary() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'summary', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterSortBy> sortBySummaryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'summary', Sort.desc);
+    });
+  }
+
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterSortBy> sortByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
@@ -1877,6 +2104,18 @@ extension HistoryEntryQuerySortThenBy
     });
   }
 
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterSortBy> thenBySummary() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'summary', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HistoryEntry, HistoryEntry, QAfterSortBy> thenBySummaryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'summary', Sort.desc);
+    });
+  }
+
   QueryBuilder<HistoryEntry, HistoryEntry, QAfterSortBy> thenByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
@@ -1912,6 +2151,13 @@ extension HistoryEntryQueryWhereDistinct
     });
   }
 
+  QueryBuilder<HistoryEntry, HistoryEntry, QDistinct> distinctBySummary(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'summary', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<HistoryEntry, HistoryEntry, QDistinct> distinctByTitle(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1934,7 +2180,7 @@ extension HistoryEntryQueryProperty
     });
   }
 
-  QueryBuilder<HistoryEntry, String, QQueryOperations> emojiProperty() {
+  QueryBuilder<HistoryEntry, String?, QQueryOperations> emojiProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'emoji');
     });
@@ -1946,7 +2192,13 @@ extension HistoryEntryQueryProperty
     });
   }
 
-  QueryBuilder<HistoryEntry, String, QQueryOperations> titleProperty() {
+  QueryBuilder<HistoryEntry, String?, QQueryOperations> summaryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'summary');
+    });
+  }
+
+  QueryBuilder<HistoryEntry, String?, QQueryOperations> titleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'title');
     });

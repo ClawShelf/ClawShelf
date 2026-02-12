@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:claw_shelf/core/engine/isar/document.dart';
 
 class RecentDocCard extends StatelessWidget {
-  final DocEntry doc;
+  final String? emoji;
+  final String? title;
+  final String? summary;
+
+  // final DocEntry doc;
   final VoidCallback onTap;
 
-  const RecentDocCard({super.key, required this.doc, required this.onTap});
+  const RecentDocCard({
+    super.key,
+    required this.onTap,
+    this.emoji,
+    this.title,
+    this.summary,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +23,7 @@ class RecentDocCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withValues(alpha:0.2)),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: InkWell(
         onTap: onTap,
@@ -27,11 +36,11 @@ class RecentDocCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(doc.emoji ?? "📄", style: const TextStyle(fontSize: 18)),
+                  Text(emoji ?? "📄", style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      doc.title ?? "",
+                      title ?? "",
                       style: const TextStyle(fontWeight: FontWeight.bold),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -41,7 +50,7 @@ class RecentDocCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                doc.summary ?? "No summary available",
+                summary ?? "No summary available",
                 style: Theme.of(context).textTheme.bodySmall,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

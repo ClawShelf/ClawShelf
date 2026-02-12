@@ -7,6 +7,8 @@ import 'package:isar/isar.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 
+const docsIsarKey = 'docs_db';
+
 class DocSyncManager {
   late Isar isar;
   final String dbName = 'default';

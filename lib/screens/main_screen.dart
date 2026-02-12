@@ -1,4 +1,6 @@
 import 'package:claw_shelf/core/engine/isar/user_setting.dart';
+import 'package:claw_shelf/core/engine/manager/document_manager.dart';
+import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
@@ -23,10 +25,12 @@ class _CSMainScreenState extends State<CSMainScreen> {
   @override
   void initState() {
     super.initState();
-    final getIt = GetIt.instance;
-    docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
-    prefsIsar = getIt.get<Isar>(instanceName: 'prefs_db');
+    docsIsar = GetIt.instance(instanceName: docsIsarKey);
+    prefsIsar = GetIt.instance(instanceName: preferenceIsarKey);
     _loadConfig();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SettingsRepository.runStartupSanitySweep();
+    });
   }
 
   // Load the navigation tree from Isar
@@ -344,18 +348,39 @@ class _CSMainScreenState extends State<CSMainScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    final docId = docs[index];
-                    final doc = docsIsar.docEntrys
-                        .filter()
-                        .docIdEqualTo(docId.docId)
-                        .findFirstSync();
-                    if (doc == null) {
-                      // or delete that missing history entry
-                      return Container();
-                    }
+                    final historyEntry = docs[index];
                     return RecentDocCard(
-                      doc: doc,
-                      onTap: () => CSDocNavigation.open(context, doc),
+                      emoji: historyEntry.emoji,
+                      title: historyEntry.title,
+                      summary: historyEntry.summary,
+                      onTap: () async {
+                        final doc = docsIsar.docEntrys
+                            .filter()
+                            .docIdEqualTo(historyEntry.docId)
+                            .findFirstSync();
+
+                        if (doc == null) {
+                          // Since this was missing, we delete all the history referencing this ID
+
+                          await prefsIsar.writeTxn(() async {
+                            // Delete EVERYTHING for this ID in one single disk trip
+                            await prefsIsar.historyEntrys
+                                .filter()
+                                .docIdEqualTo(historyEntry.docId)
+                                .deleteAll();
+                          });
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Document no longer exists."),
+                              ),
+                            );
+                          }
+                        } else {
+                          CSDocNavigation.open(context, doc);
+                        }
+                      },
                     );
                   },
                 ),

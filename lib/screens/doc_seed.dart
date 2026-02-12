@@ -22,9 +22,9 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
     final docsIsar = await DocSyncManager.bootstrap();
     final getIt = GetIt.instance;
 
-    getIt.registerSingleton<Isar>(docsIsar, instanceName: 'docs_db');
+    getIt.registerSingleton<Isar>(docsIsar, instanceName: docsIsarKey);
     getIt.registerLazySingleton(
-      () => DocSyncManager(getIt(instanceName: 'docs_db')),
+      () => DocSyncManager(getIt(instanceName: docsIsarKey)),
     );
 
     if (mounted) {

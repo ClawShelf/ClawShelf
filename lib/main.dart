@@ -17,9 +17,9 @@ Future injectUserPref() async {
     directory: dir.path,
   );
 
-  getIt.registerSingleton<Isar>(prefsIsar, instanceName: 'prefs_db');
+  getIt.registerSingleton<Isar>(prefsIsar, instanceName: preferenceIsarKey);
   getIt.registerLazySingleton(
-    () => SettingsRepository(getIt(instanceName: 'prefs_db')),
+    () => SettingsRepository(getIt(instanceName: preferenceIsarKey)),
   );
 }
 

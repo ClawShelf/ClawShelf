@@ -25,8 +25,9 @@ class HistoryEntry {
   @Index(unique: true, replace: true)
   late String docId;
 
-  late String title;
-  late String emoji;
+  String? title;
+  String? emoji;
+  String? summary;
 
   late DateTime lastViewed;
 }

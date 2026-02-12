@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
@@ -26,8 +27,7 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
   void initState() {
     super.initState();
 
-    final getIt = GetIt.instance;
-    docsIsar = getIt.get<Isar>(instanceName: 'docs_db');
+    docsIsar = GetIt.instance(instanceName: docsIsarKey);
   }
 
   void _onSearch(String query) {
