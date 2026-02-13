@@ -17,37 +17,53 @@ dart run tools/package_documents.dart --openclaw_path ~/openclaw --output assets
 
 void main(List<String> arguments) async {
   var parser = ArgParser()
-    ..addFlag('verbose', abbr: 'v', help: 'Verbose output')
     ..addOption('openclaw_path', help: 'Path to openclaw repository')
-    ..addOption('output', abbr: 'o', help: 'Output Isar database directory')
-    ..addOption('isar_name', help: 'Isar database file name');
+    ..addOption(
+      'output',
+      abbr: 'o',
+      help: 'Output folder (e.g., assets)',
+      defaultsTo: 'assets',
+    )
+    ..addOption(
+      'isar_name',
+      help: 'Isar database file name',
+      defaultsTo: 'default',
+    )
+    ..addFlag(
+      'archive',
+      abbr: 'a',
+      negatable: false,
+      help: 'Create ZIP bundle and build.json in dist/',
+    )
+    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
-  ArgResults result;
+  ArgResults argParseResult;
   String openClawPath;
-  try {
-    result = parser.parse(arguments);
-    if (result['openclaw_path'] == null ||
-        (result['openclaw_path'] as String).isEmpty) {
-      throw Exception("please provide [openclaw_path] option");
-    } else {
-      openClawPath = result['openclaw_path'];
-    }
-    // print(result['output'] as String?);
-  } on ArgParserException catch (e) {
-    print("Argument parsing error: ${e.message}");
-    exit(1);
-  } catch (e) {
-    print(e);
-    exit(1);
+
+  argParseResult = parser.parse(arguments);
+
+  if (argParseResult['help']) {
+    print(parser.usage);
+    return;
+  }
+
+  if (argParseResult['openclaw_path'] == null ||
+      (argParseResult['openclaw_path'] as String).isEmpty) {
+    print("please provide [openclaw_path] option");
+    print(parser.usage);
+    return;
+    // throw Exception("please provide [openclaw_path] option");
+  } else {
+    openClawPath = argParseResult['openclaw_path'];
   }
 
   String outputPath;
 
-  if (result['output'] == null || (result['output'] as String).isEmpty) {
+  if (argParseResult['output'] == null || (argParseResult['output'] as String).isEmpty) {
     outputPath = '.';
     print("Using current directory as output folder");
   } else {
-    outputPath = result['output'];
+    outputPath = argParseResult['output'];
   }
 
   final directory = Directory(outputPath);
@@ -57,11 +73,11 @@ void main(List<String> arguments) async {
   }
 
   String isarDBFileName;
-  if (result['isar_name'] == null || (result['isar_name'] as String).isEmpty) {
+  if (argParseResult['isar_name'] == null || (argParseResult['isar_name'] as String).isEmpty) {
     isarDBFileName = 'default';
     print("using 'default' as Isar Database filename");
   } else {
-    isarDBFileName = result['isar_name'];
+    isarDBFileName = argParseResult['isar_name'];
   }
 
   await Isar.initializeIsarCore(download: true);
@@ -114,6 +130,13 @@ void main(List<String> arguments) async {
     print("🗑️ Removed lock file.");
   }
 
+  final bool shouldArchive = argParseResult['archive'];
+  if (shouldArchive) {
+    await archivePackageToDist(outputPath, isarDBFileName);
+  }
+}
+
+Future archivePackageToDist(String outputPath, String isarDBFileName) async {
   print("📦 Packaging assets...");
 
   final distDir = Directory('dist');
