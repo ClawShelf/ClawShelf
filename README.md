@@ -5,9 +5,10 @@
 
 **ClawShelf** is a lightning-fast, offline-first documentation reader and reference library built for the [OpenClaw](https://github.com/OpenClaw) ecosystem.
 
-[![Get it on Google Play](https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=com.fengjiongmax.clawshelf)
-[![Download on the App Store](https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg)](https://apps.apple.com/us/app/clawshelf-openclaw-docs/id6758986679)
-
+<p>
+  <a href="https://apps.apple.com/us/app/clawshelf-openclaw-docs/id6758986679"><img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg" height="40" align="center"></a>
+  <a href="https://play.google.com/store/apps/details?id=com.fengjiongmax.clawshelf"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60" align="center"></a>
+</p>
 
 Navigating hundreds of technical files shouldn't be a chore. ClawShelf takes the entire OpenClaw reference library and puts it in your pocket with instant search and native mobile rendering.
 
