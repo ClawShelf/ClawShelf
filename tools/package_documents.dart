@@ -29,6 +29,7 @@ void main(List<String> arguments) async {
       help: 'Isar database file name',
       defaultsTo: 'default',
     )
+    ..addOption('openclaw_sha', help: 'The specific commit hash of the docs')
     ..addFlag(
       'archive',
       abbr: 'a',
@@ -59,7 +60,8 @@ void main(List<String> arguments) async {
 
   String outputPath;
 
-  if (argParseResult['output'] == null || (argParseResult['output'] as String).isEmpty) {
+  if (argParseResult['output'] == null ||
+      (argParseResult['output'] as String).isEmpty) {
     outputPath = '.';
     print("Using current directory as output folder");
   } else {
@@ -73,7 +75,8 @@ void main(List<String> arguments) async {
   }
 
   String isarDBFileName;
-  if (argParseResult['isar_name'] == null || (argParseResult['isar_name'] as String).isEmpty) {
+  if (argParseResult['isar_name'] == null ||
+      (argParseResult['isar_name'] as String).isEmpty) {
     isarDBFileName = 'default';
     print("using 'default' as Isar Database filename");
   } else {
@@ -131,12 +134,17 @@ void main(List<String> arguments) async {
   }
 
   final bool shouldArchive = argParseResult['archive'];
-  if (shouldArchive) {
-    await archivePackageToDist(outputPath, isarDBFileName);
+  final String? openClawSha = argParseResult['openclaw_sha'];
+  if (shouldArchive && openClawSha != null && openClawSha.isNotEmpty) {
+    await archivePackageToDist(outputPath, isarDBFileName, openClawSha);
   }
 }
 
-Future archivePackageToDist(String outputPath, String isarDBFileName) async {
+Future archivePackageToDist(
+  String outputPath,
+  String isarDBFileName,
+  String openClawSha,
+) async {
   print("📦 Packaging assets...");
 
   final distDir = Directory('dist');
@@ -173,6 +181,7 @@ Future archivePackageToDist(String outputPath, String isarDBFileName) async {
   final manifest = {
     "version": timestamp,
     "isar_hash": hash,
+    "openclaw_sha": openClawSha,
     "zip_url": "$remoteDbBaseUrl/$timestamp.zip",
   };
 
