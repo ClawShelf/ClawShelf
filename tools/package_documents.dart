@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:args/args.dart';
+import 'package:claw_shelf/core/constants/urls.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:crypto/crypto.dart';
 import 'package:isar/isar.dart';
@@ -149,7 +150,7 @@ void main(List<String> arguments) async {
   final manifest = {
     "version": timestamp,
     "isar_hash": hash,
-    "zip_url": "https://your-server.com/builds/$timestamp.zip",
+    "zip_url": "$remoteDbBaseUrl/$timestamp.zip",
   };
 
   File('dist/build.json').writeAsStringSync(jsonEncode(manifest));

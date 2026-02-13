@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:claw_shelf/core/constants/urls.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -12,10 +13,6 @@ const docsIsarKey = 'docs_db';
 class DocSyncManager {
   late Isar isar;
   final String dbName = 'default';
-
-  // Update these URLs to your actual endpoints
-  static const remoteVersionUrl = "https://your-server.com/docs/version.json";
-  static const remoteDbBaseUrl = "https://your-server.com/docs/";
 
   DocSyncManager(this.isar);
 
@@ -99,7 +96,7 @@ class DocSyncManager {
     final currentDbFile = File('${dir.path}/$dbName.isar');
 
     // 1. Download binary
-    final response = await http.get(Uri.parse("$remoteDbBaseUrl$filename"));
+    final response = await http.get(Uri.parse("$remoteDbBaseUrl/$filename"));
     await tempFile.writeAsBytes(response.bodyBytes);
 
     // 2. Atomic Swap
