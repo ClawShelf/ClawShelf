@@ -125,7 +125,7 @@ void main(List<String> arguments) async {
 
   // 2. Create the ZIP bundle
   final encoder = ZipFileEncoder();
-  final zipPath = join('dist', 'bundle.zip');
+  final zipPath = join('dist', '$timestamp.zip');
   encoder.create(zipPath);
 
   final isarFile = File(join(outputPath, '$isarDBFileName.isar'));
@@ -143,7 +143,7 @@ void main(List<String> arguments) async {
   await encoder.close();
 
   // 3. Calculate SHA-256
-  final bytes = File('dist/bundle.zip').readAsBytesSync();
+  final bytes = File('dist/$timestamp.zip').readAsBytesSync();
   final hash = sha256.convert(bytes).toString();
 
   // 4. Generate build.json

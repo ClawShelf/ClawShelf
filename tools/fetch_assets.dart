@@ -8,14 +8,13 @@ import 'package:path/path.dart';
 
 // Run: dart run tool/fetch_assets.dart
 void main() async {
-  const String remoteUrl = '$remoteVersionUrl/build.json';
   const String targetDir = 'assets'; // Your app's assets folder
 
   print("🌐 Checking for latest documentation bundle...");
 
   try {
     // 1. Get Manifest
-    final response = await http.get(Uri.parse(remoteUrl));
+    final response = await http.get(Uri.parse(remoteVersionUrl));
     if (response.statusCode != 200) throw "Failed to fetch build.json";
 
     final manifest = jsonDecode(response.body);
