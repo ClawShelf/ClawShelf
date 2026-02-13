@@ -1,5 +1,8 @@
 # 🦀 ClawShelf
 
+[![OpenClaw Sync](https://img.shields.io/github/actions/workflow/status/ClawShelf/clawshelf.github.io/build-and-deploy.yml?label=OpenClaw%20Sync&logo=github)](https://github.com/ClawShelf/clawshelf.github.io/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **ClawShelf** is a lightning-fast, offline-first documentation reader and reference library built for the [OpenClaw](https://github.com/OpenClaw) ecosystem.
 
 [![Get it on Google Play](https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=com.fengjiongmax.clawshelf)
@@ -56,10 +59,10 @@ To build the database from a local copy of the OpenClaw docs:
 
 ```bash
 # Basic build (updates assets/ for local testing)
-dart run tool/package_documents.dart --openclaw_path ~/path/to/openclaw  --output assets
+dart run tool/package_documents.dart --openclaw_path ~/path/to/openclaw --output assets
 
 # Full build (updates assets/ AND generates ZIP/Manifest in dist/)
-dart run tool/package_documents.dart --openclaw_path ~/path/to/openclaw  --output assets --archive
+dart run tool/package_documents.dart --openclaw_path ~/path/to/openclaw --output assets --archive
 
 ```
 
