@@ -46,3 +46,5 @@ app.*.map.json
 
 # generate local isar file
 /assets/*.lock
+tools/*.so
+dist/
