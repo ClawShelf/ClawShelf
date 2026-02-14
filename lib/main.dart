@@ -1,3 +1,4 @@
+import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/user_setting.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ Future injectUserPref() async {
     [UserSettingSchema, HistoryEntrySchema],
     name: 'user_prefs',
     directory: dir.path,
+    inspector: !inspectDocsIsar,
   );
 
   getIt.registerSingleton<Isar>(prefsIsar, instanceName: preferenceIsarKey);

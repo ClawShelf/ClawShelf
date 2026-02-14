@@ -46,8 +46,14 @@ class AppMetadata {
 
   // We make these optional so a single record
   // doesn't have to provide both an int AND a string.
-  int? value;
+  int? valueInt;
   String? valueString;
+  bool? valueBool;
+
+  /// A helper to get whatever value is present.
+  /// @ignore ensures Isar doesn't try to persist a 'dynamic' type.
+  @ignore
+  dynamic get value => valueString ?? valueInt ?? valueBool;
 }
 
 @collection

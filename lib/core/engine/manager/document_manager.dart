@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/constants/urls.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -12,14 +13,14 @@ const docsIsarKey = 'docs_db';
 
 class DocSyncManager {
   late Isar isar;
-  final String dbName = 'default';
+  static final String dbName = 'default';
 
   DocSyncManager(this.isar);
 
   /// 🚀 BOOTSTRAP: Call this in your main()
   static Future<Isar> bootstrap() async {
     final dir = await getApplicationDocumentsDirectory();
-    final localDbFile = File('${dir.path}/default.isar');
+    final localDbFile = File('${dir.path}/$dbName.isar');
 
     // 1. Get Build Number of the App itself (from pubspec.yaml)
     final info = await PackageInfo.fromPlatform();
@@ -34,7 +35,7 @@ class DocSyncManager {
       print(
         "📦 Package (v$packageBuild) is newer than Local (v$localBuild). Seeding...",
       );
-      final data = await rootBundle.load('assets/default.isar');
+      final data = await rootBundle.load('assets/$dbName.isar');
       await localDbFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
     }
 
@@ -47,8 +48,9 @@ class DocSyncManager {
         AppRedirectSchema,
         AppImageSchema,
       ],
-      name: 'default',
+      name: dbName,
       directory: dir.path,
+      inspector: inspectDocsIsar,
     );
   }
 
@@ -121,7 +123,7 @@ class DocSyncManager {
       await isar.appMetadatas.put(
         AppMetadata()
           ..key = "build_number"
-          ..value = build,
+          ..valueInt = build,
       );
       await isar.appMetadatas.put(
         AppMetadata()

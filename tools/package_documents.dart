@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:args/args.dart';
+import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/constants/urls.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:crypto/crypto.dart';
@@ -42,6 +43,9 @@ void main(List<String> arguments) async {
   String openClawPath;
 
   argParseResult = parser.parse(arguments);
+
+  final bool shouldArchive = argParseResult['archive'];
+  final String? openClawSha = argParseResult['openclaw_sha'];
 
   if (argParseResult['help']) {
     print(parser.usage);
@@ -94,7 +98,7 @@ void main(List<String> arguments) async {
       AppImageSchema,
     ],
     directory: outputPath,
-    inspector: false,
+    inspector: true,
   );
 
   isar.writeTxnSync(() {
@@ -105,6 +109,12 @@ void main(List<String> arguments) async {
     isar.appImages.clearSync();
   });
 
+  final imageDir = Directory(join(outputPath, 'images'));
+  if (imageDir.existsSync()) {
+    imageDir.deleteSync(recursive: true);
+  }
+  imageDir.createSync();
+
   await DocProcessor(
     docsRoot: join(openClawPath, 'docs'),
     isar: isar,
@@ -113,13 +123,24 @@ void main(List<String> arguments) async {
 
   await DocParser(isar: isar, openClawPath: openClawPath).updateDocs();
 
+  final timestamp = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+
   // Update a final "Bundle Version" metadata
   await isar.writeTxn(() async {
     await isar.appMetadatas.put(
       AppMetadata()
-        ..key = "bundle_build_date"
-        ..value = DateTime.now().millisecondsSinceEpoch,
+        ..key = MetadataKeys.buildDate
+        ..valueInt = timestamp,
     );
+
+    // ADD THIS: Store the SHA so the app knows its source
+    if (openClawSha != null) {
+      await isar.appMetadatas.put(
+        AppMetadata()
+          ..key = MetadataKeys.openClawSha
+          ..valueString = openClawSha,
+      );
+    }
   });
 
   // At the very end of main()
@@ -133,10 +154,13 @@ void main(List<String> arguments) async {
     print("🗑️ Removed lock file.");
   }
 
-  final bool shouldArchive = argParseResult['archive'];
-  final String? openClawSha = argParseResult['openclaw_sha'];
   if (shouldArchive && openClawSha != null && openClawSha.isNotEmpty) {
-    await archivePackageToDist(outputPath, isarDBFileName, openClawSha);
+    await archivePackageToDist(
+      outputPath,
+      isarDBFileName,
+      openClawSha,
+      timestamp,
+    );
   }
 }
 
@@ -144,15 +168,16 @@ Future archivePackageToDist(
   String outputPath,
   String isarDBFileName,
   String openClawSha,
+  int timestamp,
 ) async {
   print("📦 Packaging assets...");
 
   final distDir = Directory('dist');
-  if (!distDir.existsSync()) {
-    distDir.createSync();
+  if (distDir.existsSync()) {
+    // Delete old builds to keep the dist clean
+    distDir.deleteSync(recursive: true);
   }
-
-  final timestamp = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+  await distDir.create();
 
   // 2. Create the ZIP bundle
   final encoder = ZipFileEncoder();
@@ -179,10 +204,10 @@ Future archivePackageToDist(
 
   // 4. Generate build.json
   final manifest = {
-    "version": timestamp,
-    "isar_hash": hash,
-    "openclaw_sha": openClawSha,
-    "zip_url": "$remoteDbBaseUrl/$timestamp.zip",
+    MetadataKeys.bundleVersion: timestamp,
+    MetadataKeys.jsonIsarHash: hash,
+    MetadataKeys.openClawSha: openClawSha,
+    MetadataKeys.jsonZipUrl: "$remoteDbBaseUrl/$timestamp.zip",
   };
 
   File('dist/build.json').writeAsStringSync(jsonEncode(manifest));

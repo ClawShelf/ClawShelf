@@ -20,6 +20,7 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
 
   Future<void> _startInitialization() async {
     final docsIsar = await DocSyncManager.bootstrap();
+    print("Document Isar Loaded");
     final getIt = GetIt.instance;
 
     getIt.registerSingleton<Isar>(docsIsar, instanceName: docsIsarKey);

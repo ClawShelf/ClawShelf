@@ -3023,13 +3023,18 @@ const AppMetadataSchema = CollectionSchema(
       name: r'key',
       type: IsarType.string,
     ),
-    r'value': PropertySchema(
+    r'valueBool': PropertySchema(
       id: 1,
-      name: r'value',
+      name: r'valueBool',
+      type: IsarType.bool,
+    ),
+    r'valueInt': PropertySchema(
+      id: 2,
+      name: r'valueInt',
       type: IsarType.long,
     ),
     r'valueString': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'valueString',
       type: IsarType.string,
     )
@@ -3090,8 +3095,9 @@ void _appMetadataSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.key);
-  writer.writeLong(offsets[1], object.value);
-  writer.writeString(offsets[2], object.valueString);
+  writer.writeBool(offsets[1], object.valueBool);
+  writer.writeLong(offsets[2], object.valueInt);
+  writer.writeString(offsets[3], object.valueString);
 }
 
 AppMetadata _appMetadataDeserialize(
@@ -3103,8 +3109,9 @@ AppMetadata _appMetadataDeserialize(
   final object = AppMetadata();
   object.id = id;
   object.key = reader.readStringOrNull(offsets[0]);
-  object.value = reader.readLongOrNull(offsets[1]);
-  object.valueString = reader.readStringOrNull(offsets[2]);
+  object.valueBool = reader.readBoolOrNull(offsets[1]);
+  object.valueInt = reader.readLongOrNull(offsets[2]);
+  object.valueString = reader.readStringOrNull(offsets[3]);
   return object;
 }
 
@@ -3118,8 +3125,10 @@ P _appMetadataDeserializeProp<P>(
     case 0:
       return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset)) as P;
     case 2:
+      return (reader.readLongOrNull(offset)) as P;
+    case 3:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -3538,61 +3547,91 @@ extension AppMetadataQueryFilter
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition> valueIsNull() {
+  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition>
+      valueBoolIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'value',
+        property: r'valueBool',
       ));
     });
   }
 
   QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition>
-      valueIsNotNull() {
+      valueBoolIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'value',
+        property: r'valueBool',
       ));
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition> valueEqualTo(
-      int? value) {
+  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition>
+      valueBoolEqualTo(bool? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'value',
+        property: r'valueBool',
         value: value,
       ));
     });
   }
 
   QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition>
-      valueGreaterThan(
+      valueIntIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'valueInt',
+      ));
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition>
+      valueIntIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'valueInt',
+      ));
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition> valueIntEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'valueInt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition>
+      valueIntGreaterThan(
     int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'value',
+        property: r'valueInt',
         value: value,
       ));
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition> valueLessThan(
+  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition>
+      valueIntLessThan(
     int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'value',
+        property: r'valueInt',
         value: value,
       ));
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition> valueBetween(
+  QueryBuilder<AppMetadata, AppMetadata, QAfterFilterCondition> valueIntBetween(
     int? lower,
     int? upper, {
     bool includeLower = true,
@@ -3600,7 +3639,7 @@ extension AppMetadataQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'value',
+        property: r'valueInt',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -3784,15 +3823,27 @@ extension AppMetadataQuerySortBy
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> sortByValue() {
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> sortByValueBool() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'value', Sort.asc);
+      return query.addSortBy(r'valueBool', Sort.asc);
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> sortByValueDesc() {
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> sortByValueBoolDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'value', Sort.desc);
+      return query.addSortBy(r'valueBool', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> sortByValueInt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'valueInt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> sortByValueIntDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'valueInt', Sort.desc);
     });
   }
 
@@ -3835,15 +3886,27 @@ extension AppMetadataQuerySortThenBy
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> thenByValue() {
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> thenByValueBool() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'value', Sort.asc);
+      return query.addSortBy(r'valueBool', Sort.asc);
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> thenByValueDesc() {
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> thenByValueBoolDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'value', Sort.desc);
+      return query.addSortBy(r'valueBool', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> thenByValueInt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'valueInt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QAfterSortBy> thenByValueIntDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'valueInt', Sort.desc);
     });
   }
 
@@ -3869,9 +3932,15 @@ extension AppMetadataQueryWhereDistinct
     });
   }
 
-  QueryBuilder<AppMetadata, AppMetadata, QDistinct> distinctByValue() {
+  QueryBuilder<AppMetadata, AppMetadata, QDistinct> distinctByValueBool() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'value');
+      return query.addDistinctBy(r'valueBool');
+    });
+  }
+
+  QueryBuilder<AppMetadata, AppMetadata, QDistinct> distinctByValueInt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'valueInt');
     });
   }
 
@@ -3897,9 +3966,15 @@ extension AppMetadataQueryProperty
     });
   }
 
-  QueryBuilder<AppMetadata, int?, QQueryOperations> valueProperty() {
+  QueryBuilder<AppMetadata, bool?, QQueryOperations> valueBoolProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'value');
+      return query.addPropertyName(r'valueBool');
+    });
+  }
+
+  QueryBuilder<AppMetadata, int?, QQueryOperations> valueIntProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'valueInt');
     });
   }
 

@@ -47,13 +47,13 @@ class DocProcessor {
         }
       }
 
-      // Update Metadata to track when the last sync happened
-      final syncMeta = AppMetadata()
-        ..key = "last_docs_sync"
-        ..value = DateTime.now().millisecondsSinceEpoch
-        ..valueString = "Version: ${DateTime.now().toIso8601String()}";
+      // // Update Metadata to track when the last sync happened
+      // final syncMeta = AppMetadata()
+      //   ..key = "last_docs_sync"
+      //   ..valueInt = DateTime.now().millisecondsSinceEpoch
+      //   ..valueString = "Version: ${DateTime.now().toIso8601String()}";
 
-      await isar.appMetadatas.put(syncMeta);
+      // await isar.appMetadatas.put(syncMeta);
     });
 
     stopwatch.stop();
