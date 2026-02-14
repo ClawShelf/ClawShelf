@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/sync_logic.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:claw_shelf/screens/main_screen.dart';
@@ -10,6 +11,17 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+
+/// This runs in a separate Isolate to prevent UI jank during extraction
+Future<void> _processBundleIsolate(Map<String, dynamic> args) async {
+  final file = File(args['zipPath']);
+  final bytes = await file.readAsBytes();
+  await SyncLogic.processBundle(
+    zipBytes: bytes,
+    targetPath: args['path'],
+    expectedHash: args['hash'], // Pass empty string if already verified
+  );
+}
 
 class CSDocSeedScreen extends StatefulWidget {
   const CSDocSeedScreen({super.key});
@@ -45,13 +57,11 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
       // 2. Pending Update Check
       if (updateZip.existsSync()) {
         setState(() => _statusMessage = "Applying latest updates...");
-        // Use shared SyncLogic to unzip while Isar is still closed
-        await SyncLogic.processBundle(
-          zipBytes: await updateZip.readAsBytes(),
-          expectedHash:
-              "", // Verification happened during the background download phase
-          targetPath: dir.path,
-        );
+        await compute(_processBundleIsolate, {
+          'zipPath': updateZip.path,
+          'path': dir.path,
+          'hash': '', // We already verified this during the download phase
+        });
         await updateZip.delete();
       }
 

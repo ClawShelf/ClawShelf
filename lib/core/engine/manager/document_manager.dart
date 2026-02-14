@@ -15,16 +15,18 @@ class DocSyncManager {
 
   static void startBackgroundDownload(Isar isar, String targetPath) async {
     try {
-      final response = await http.get(Uri.parse(remoteVersionUrl));
-      if (response.statusCode != 200) return;
+      final manifestResponse = await http.get(Uri.parse(remoteVersionUrl));
+      if (manifestResponse.statusCode != 200) return;
 
-      final manifest = jsonDecode(response.body);
+      final manifest = jsonDecode(manifestResponse.body);
       final int remoteTimestamp = manifest[MetadataKeys.bundleVersion];
 
       // Query local Isar using the SAME key used in the build.json
       final localMeta = await isar.appMetadatas
           .filter()
-          .keyEqualTo(MetadataKeys.bundleVersion) // The key in your DB
+          .keyEqualTo(
+            MetadataKeys.bundleVersion,
+          ) // Use bundleVersion, not buildDate
           .findFirst();
 
       final int localTimestamp = localMeta?.valueInt ?? 0;
@@ -40,7 +42,7 @@ class DocSyncManager {
           final remoteHash = manifest[MetadataKeys.jsonIsarHash];
 
           final bool success = await compute(_verifyAndSave, {
-            'bytes': response.bodyBytes,
+            'bytes': zipResponse.bodyBytes,
             'hash': remoteHash,
             'path': '$targetPath/update.zip',
           });
@@ -71,6 +73,8 @@ Future<bool> _verifyAndSave(Map<String, dynamic> params) async {
 
   // Heavy CPU work: Hashing
   final String actualHash = sha256.convert(bytes).toString();
+
+  print("Expected hash $expectedHash, downloaded hash $actualHash");
 
   if (actualHash == expectedHash) {
     // Heavy I/O work: Writing to disk

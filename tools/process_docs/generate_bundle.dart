@@ -46,14 +46,6 @@ class DocProcessor {
           print("Error writting: $e");
         }
       }
-
-      // // Update Metadata to track when the last sync happened
-      // final syncMeta = AppMetadata()
-      //   ..key = "last_docs_sync"
-      //   ..valueInt = DateTime.now().millisecondsSinceEpoch
-      //   ..valueString = "Version: ${DateTime.now().toIso8601String()}";
-
-      // await isar.appMetadatas.put(syncMeta);
     });
 
     stopwatch.stop();
