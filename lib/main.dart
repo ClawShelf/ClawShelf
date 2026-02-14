@@ -7,8 +7,13 @@ import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+final GlobalKey<ScaffoldMessengerState> snackbarKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 Future injectUserPref() async {
   final getIt = GetIt.instance;
+
+  GetIt.I.registerSingleton(snackbarKey);
 
   // Open User Preferences immediately
   final dir = await getApplicationSupportDirectory();
@@ -16,12 +21,16 @@ Future injectUserPref() async {
     [UserSettingSchema, HistoryEntrySchema],
     name: 'user_prefs',
     directory: dir.path,
-    inspector: !inspectDocsIsar,
+    inspector: !MetadataKeys.inspectDocsIsar,
   );
 
-  getIt.registerSingleton<Isar>(prefsIsar, instanceName: preferenceIsarKey);
+  getIt.registerSingleton<Isar>(
+    prefsIsar,
+    instanceName: MetadataKeys.preferenceIsarKey,
+  );
   getIt.registerLazySingleton(
-    () => SettingsRepository(getIt(instanceName: preferenceIsarKey)),
+    () =>
+        SettingsRepository(getIt(instanceName: MetadataKeys.preferenceIsarKey)),
   );
 }
 
@@ -39,6 +48,7 @@ class ClawShelfApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: snackbarKey, // Register the key here
       title: 'ClawShelf',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),

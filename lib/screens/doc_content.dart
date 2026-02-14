@@ -1,4 +1,4 @@
-import 'package:claw_shelf/core/engine/manager/document_manager.dart';
+import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get_it/get_it.dart';
@@ -27,7 +27,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
   void initState() {
     super.initState();
 
-    docsIsar = GetIt.instance(instanceName: docsIsarKey);
+    docsIsar = GetIt.instance(instanceName: MetadataKeys.docsIsarKey);
     // Start fetching immediately, but we will handle the display carefully
     _docFuture = _fetchDocWithDelay();
   }

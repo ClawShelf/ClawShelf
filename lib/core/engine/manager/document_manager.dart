@@ -2,141 +2,81 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/constants/urls.dart';
-import 'package:flutter/services.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 
-const docsIsarKey = 'docs_db';
-
 class DocSyncManager {
-  late Isar isar;
-  static final String dbName = 'default';
+  static const String dbName = 'default';
 
-  DocSyncManager(this.isar);
-
-  /// 🚀 BOOTSTRAP: Call this in your main()
-  static Future<Isar> bootstrap() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final localDbFile = File('${dir.path}/$dbName.isar');
-
-    // 1. Get Build Number of the App itself (from pubspec.yaml)
-    final info = await PackageInfo.fromPlatform();
-    final packageBuild = int.parse(info.buildNumber);
-
-    // 2. Peek at the Local DB build number WITHOUT opening the full Isar yet
-    // We use a small sidecar file or a metadata-only Isar peek
-    final localBuild = await _readLocalMetadataBuild(dir.path);
-
-    // 3. DECISION: Is the Package (Store Update) newer than our Local Data?
-    if (!(await localDbFile.exists()) || packageBuild > localBuild) {
-      print(
-        "📦 Package (v$packageBuild) is newer than Local (v$localBuild). Seeding...",
-      );
-      final data = await rootBundle.load('assets/$dbName.isar');
-      await localDbFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
-    }
-
-    // 4. Open the winning database
-    return await Isar.open(
-      [
-        DocEntrySchema,
-        AppMetadataSchema,
-        AppNavigationSchema,
-        AppRedirectSchema,
-        AppImageSchema,
-      ],
-      name: dbName,
-      directory: dir.path,
-      inspector: inspectDocsIsar,
-    );
-  }
-
-  /// 🌐 REMOTE SYNC: Call this after app is loaded
-  Future<void> syncWithRemote() async {
+  static void startBackgroundDownload(Isar isar, String targetPath) async {
     try {
-      // 1. Fetch the remote manifest
       final response = await http.get(Uri.parse(remoteVersionUrl));
       if (response.statusCode != 200) return;
 
-      final remoteJson = jsonDecode(response.body);
-      final remoteBuild = remoteJson['build_number'];
-      final remoteHash = remoteJson['hash'];
+      final manifest = jsonDecode(response.body);
+      final int remoteTimestamp = manifest[MetadataKeys.bundleVersion];
 
-      // 2. Check current Local state
+      // Query local Isar using the SAME key used in the build.json
       final localMeta = await isar.appMetadatas
           .filter()
-          .keyEqualTo("build_number")
+          .keyEqualTo(MetadataKeys.bundleVersion) // The key in your DB
           .findFirst();
-      final localBuild = localMeta?.value ?? 0;
-      final localHash = localMeta?.valueString ?? "";
 
-      // 3. Comparison Logic
-      if (remoteBuild > localBuild && remoteHash != localHash) {
-        print("☁️ Remote (v$remoteBuild) is newer. Downloading binary...");
-        await _downloadAndReplace(
-          remoteJson['db_filename'],
-          remoteBuild,
-          remoteHash,
+      final int localTimestamp = localMeta?.valueInt ?? 0;
+
+      if (remoteTimestamp > localTimestamp) {
+        print("☁️ New bundle $remoteTimestamp found. Downloading...");
+        final zipResponse = await http.get(
+          Uri.parse(manifest[MetadataKeys.jsonZipUrl]),
         );
+
+        if (zipResponse.statusCode == 200) {
+          // Verify hash before staging
+          final remoteHash = manifest[MetadataKeys.jsonIsarHash];
+
+          final bool success = await compute(_verifyAndSave, {
+            'bytes': response.bodyBytes,
+            'hash': remoteHash,
+            'path': '$targetPath/update.zip',
+          });
+          if (success) {
+            GetIt.instance<GlobalKey<ScaffoldMessengerState>>().currentState
+                ?.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "🚀 Updates downloaded. Applied on next restart.",
+                    ),
+                  ),
+                );
+          }
+        }
       }
     } catch (e) {
-      print("⚠️ Remote sync skipped: $e");
+      print("⚠️ Background sync error: $e");
     }
   }
+}
 
-  /// 🔄 THE SWAP: Safe replacement of the binary file
-  Future<void> _downloadAndReplace(
-    String filename,
-    int build,
-    String hash,
-  ) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final tempFile = File('${dir.path}/$dbName.isar.tmp');
-    final currentDbFile = File('${dir.path}/$dbName.isar');
+// 1. The "Heavy Lifter" function (Runs in Isolate)
+// We pass a Map because compute only takes one argument.
+Future<bool> _verifyAndSave(Map<String, dynamic> params) async {
+  final Uint8List bytes = params['bytes'];
+  final String expectedHash = params['hash'];
+  final String filePath = params['path'];
 
-    // 1. Download binary
-    final response = await http.get(Uri.parse("$remoteDbBaseUrl/$filename"));
-    await tempFile.writeAsBytes(response.bodyBytes);
+  // Heavy CPU work: Hashing
+  final String actualHash = sha256.convert(bytes).toString();
 
-    // 2. Atomic Swap
-    await isar.close();
-    if (await currentDbFile.exists()) await currentDbFile.delete();
-    await tempFile.rename(currentDbFile.path);
-
-    // 3. Re-open and stamp metadata
-    isar = await Isar.open(
-      [
-        DocEntrySchema,
-        AppMetadataSchema,
-        AppNavigationSchema,
-        AppRedirectSchema,
-        AppImageSchema,
-      ],
-      name: dbName,
-      directory: dir.path,
-    );
-
-    await isar.writeTxn(() async {
-      await isar.appMetadatas.put(
-        AppMetadata()
-          ..key = "build_number"
-          ..valueInt = build,
-      );
-      await isar.appMetadatas.put(
-        AppMetadata()
-          ..key = "docs_hash"
-          ..valueString = hash,
-      );
-    });
+  if (actualHash == expectedHash) {
+    // Heavy I/O work: Writing to disk
+    final file = File(filePath);
+    await file.writeAsBytes(bytes);
+    return true;
   }
-
-  /// Helper to peek at metadata without opening full Isar (uses a tiny separate file)
-  static Future<int> _readLocalMetadataBuild(String path) async {
-    final metaFile = File('$path/build_marker.txt');
-    if (!await metaFile.exists()) return 0;
-    return int.tryParse(await metaFile.readAsString()) ?? 0;
-  }
+  return false;
 }

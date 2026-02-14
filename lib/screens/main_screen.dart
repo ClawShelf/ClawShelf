@@ -1,5 +1,5 @@
+import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/user_setting.dart';
-import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -25,8 +25,8 @@ class _CSMainScreenState extends State<CSMainScreen> {
   @override
   void initState() {
     super.initState();
-    docsIsar = GetIt.instance(instanceName: docsIsarKey);
-    prefsIsar = GetIt.instance(instanceName: preferenceIsarKey);
+    docsIsar = GetIt.instance(instanceName: MetadataKeys.docsIsarKey);
+    prefsIsar = GetIt.instance(instanceName: MetadataKeys.preferenceIsarKey);
     _loadConfig();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SettingsRepository.runStartupSanitySweep();

@@ -1,4 +1,4 @@
-import 'package:claw_shelf/core/engine/manager/document_manager.dart';
+import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
@@ -63,7 +63,9 @@ class CardWidgetBuilder extends MarkdownElementBuilder {
     // Example: Use GoRouter or standard Navigator to find the docId from the path
     debugPrint("Navigating to: $path");
 
-    final docsIsar = GetIt.instance<Isar>(instanceName: docsIsarKey);
+    final docsIsar = GetIt.instance<Isar>(
+      instanceName: MetadataKeys.docsIsarKey,
+    );
 
     // If the path is /start/wizard, you'd find the doc with docPath "start/wizard.md"
     // and push a new DocReaderPage.

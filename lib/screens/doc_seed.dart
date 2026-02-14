@@ -1,8 +1,15 @@
+import 'dart:io';
+
+import 'package:claw_shelf/core/constants/keys.dart';
+import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/services/sync_logic.dart';
 import 'package:flutter/material.dart';
 import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:claw_shelf/screens/main_screen.dart';
+import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 
 class CSDocSeedScreen extends StatefulWidget {
   const CSDocSeedScreen({super.key});
@@ -12,6 +19,8 @@ class CSDocSeedScreen extends StatefulWidget {
 }
 
 class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
+  String _statusMessage = "Starting up...";
+
   @override
   void initState() {
     super.initState();
@@ -19,19 +28,66 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
   }
 
   Future<void> _startInitialization() async {
-    final docsIsar = await DocSyncManager.bootstrap();
-    print("Document Isar Loaded");
-    final getIt = GetIt.instance;
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final localDbFile = File('${dir.path}/${DocSyncManager.dbName}.isar');
+      final updateZip = File('${dir.path}/update.zip');
 
-    getIt.registerSingleton<Isar>(docsIsar, instanceName: docsIsarKey);
-    getIt.registerLazySingleton(
-      () => DocSyncManager(getIt(instanceName: docsIsarKey)),
-    );
+      // 1. Initial Seed Check
+      if (!localDbFile.existsSync()) {
+        setState(() => _statusMessage = "Seeding document library...");
+        final isarData = await rootBundle.load(
+          'assets/${DocSyncManager.dbName}.isar',
+        );
+        await localDbFile.writeAsBytes(isarData.buffer.asUint8List());
+      }
 
-    if (mounted) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => CSMainScreen()));
+      // 2. Pending Update Check
+      if (updateZip.existsSync()) {
+        setState(() => _statusMessage = "Applying latest updates...");
+        // Use shared SyncLogic to unzip while Isar is still closed
+        await SyncLogic.processBundle(
+          zipBytes: await updateZip.readAsBytes(),
+          expectedHash:
+              "", // Verification happened during the background download phase
+          targetPath: dir.path,
+        );
+        await updateZip.delete();
+      }
+
+      // 3. Open Final Instance
+      setState(() => _statusMessage = "Loading documents...");
+      final isar = await Isar.open(
+        [
+          DocEntrySchema,
+          AppMetadataSchema,
+          AppNavigationSchema,
+          AppRedirectSchema,
+          AppImageSchema,
+        ],
+        name: DocSyncManager.dbName,
+        directory: dir.path,
+        inspector: MetadataKeys.inspectDocsIsar,
+      );
+
+      // 4. Register and Start Background Sync
+      GetIt.I.registerSingleton<Isar>(
+        isar,
+        instanceName: MetadataKeys.docsIsarKey,
+      );
+
+      // We don't await this; it runs in the background while the user is in the app
+      DocSyncManager.startBackgroundDownload(isar, dir.path);
+
+      // 5. Navigate to Main
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => CSMainScreen()));
+      }
+    } catch (e) {
+      setState(() => _statusMessage = "Error: $e");
+      // You might want to add a "Retry" button here for robustness
     }
   }
 
@@ -40,11 +96,11 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
     return Scaffold(
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(), // Your pixel-lobster spinner
-            SizedBox(height: 20),
-            Text("Organizing Documents..."),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text(_statusMessage),
           ],
         ),
       ),

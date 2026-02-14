@@ -1,4 +1,4 @@
-import 'package:claw_shelf/core/engine/manager/document_manager.dart';
+import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -23,7 +23,7 @@ class CSDocNavigation {
   static DocEntry? findDocByPath(String path) {
     if (path.isEmpty) return null;
 
-    final docsIsar = GetIt.instance<Isar>(instanceName: docsIsarKey);
+    final docsIsar = GetIt.instance<Isar>(instanceName: MetadataKeys.docsIsarKey);
 
     // 1. Normalize the path
     // Remove leading/trailing slashes and lower-case it

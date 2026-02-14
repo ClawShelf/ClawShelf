@@ -129,7 +129,7 @@ void main(List<String> arguments) async {
   await isar.writeTxn(() async {
     await isar.appMetadatas.put(
       AppMetadata()
-        ..key = MetadataKeys.buildDate
+        ..key = MetadataKeys.bundleVersion
         ..valueInt = timestamp,
     );
 
