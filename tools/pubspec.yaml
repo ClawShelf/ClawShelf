@@ -1,0 +1,11 @@
+name: openclaw_tools
+description: Build and maintenance scripts for OpenClaw.
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  claw_shelf: 
+    path: ../
+  args: ^2.4.0
+  crypto: ^3.0.0
+  path: ^1.8.0
+  archive: ^4.0.7
