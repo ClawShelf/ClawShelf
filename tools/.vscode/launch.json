@@ -11,7 +11,7 @@
             "program": "package_documents.dart",
             "args": [
                 "--openclaw_path",
-                "${userHome}/openclaw",
+                "${userHome}/Projects/ClawShelf/openclaw",
                 "--output",
                 "../assets"
             ]

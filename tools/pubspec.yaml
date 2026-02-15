@@ -5,7 +5,15 @@ environment:
 dependencies:
   claw_shelf: 
     path: ../
+
+  isar: ^3.1.0+1
+  isar_flutter_libs:
+    git:
+      url: https://github.com/ClawShelf/isar
+      ref: 3.1.0-buildfix
+      path: packages/isar_flutter_libs
   args: ^2.4.0
   crypto: ^3.0.0
   path: ^1.8.0
   archive: ^4.0.7
+  yaml: ^3.1.3

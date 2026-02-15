@@ -69,9 +69,8 @@ class DocProcessor {
     );
 
     return DocEntry()
-      ..docId = relativePath
-          .replaceAll(RegExp(r'/|\\'), '_')
-          .replaceAll('.md', '')
+      ..docId =
+          relativePath.replaceAll(RegExp(r'/|\\'), '_').replaceAll('.md', '')
       ..docPath = relativePath
       ..content = finalContent
       ..title = meta['title']
@@ -86,40 +85,83 @@ class DocProcessor {
   String _syncImages(String content, String relativeFilePath) {
     var workingContent = content;
 
-    // Matches both <img src="..."> and ![alt](path)
-    final imgPattern = RegExp(r'<(img|!\[)[^>]*?(src="|\]\()([^"> \)]+)');
+    // 1. HTML <img> Tag Logic (Transpiles to Markdown like your Python script)
+    // Python: html_img_pattern = r'<img\s+[^>]*?src="([^"]+)"[^>]*?>'
+    final htmlImgPattern = RegExp(
+      r'<img\s+[^>]*?src="([^"]+)"[^>]*?>',
+      dotAll: true, // Crucial in Dart for multi-line tags
+      caseSensitive: false,
+    );
 
-    workingContent = workingContent.replaceAllMapped(imgPattern, (match) {
-      final oldSrc = match.group(3)!;
+    workingContent = workingContent.replaceAllMapped(htmlImgPattern, (match) {
+      final fullTag = match.group(0)!;
+      final oldSrc = match.group(1)!;
 
-      // Skip network images
-      if (oldSrc.startsWith(RegExp(r'http|https|data:'))) {
-        return match.group(0)!;
+      if (oldSrc.startsWith(RegExp(r'http|https|data:'))) return fullTag;
+
+      // Process the image (copy/hash)
+      final normalizedSrc =
+          oldSrc.startsWith('/') ? oldSrc.substring(1) : oldSrc;
+      final newFilename = _copyAndHashImage(normalizedSrc, relativeFilePath);
+
+      // Python Logic: Convert to Markdown + Handle Dark Mode
+      if (fullTag.contains('dark:hidden')) {
+        return "\n\n![Logo]($newFilename)\n\n";
+      } else if (fullTag.contains('dark:block')) {
+        return ""; // Hide the dark-mode version for the mobile app MVP
       }
 
-      final newFilename = _copyAndHashImage(oldSrc, relativeFilePath);
-
-      // Reconstruct the tag with the flattened image path
-      if (match.group(1) == 'img') {
-        return '<img src="$newFilename"';
-      } else {
-        // Keeps the existing Alt text if present
-        return '![${match.group(2)!.replaceAll('](', '')}]($newFilename';
-      }
+      return "\n\n![Image]($newFilename)\n\n";
     });
 
-    // Strip Mintlify-specific UI wrappers that aren't standard Markdown
-    final customTags = [
+    // 2. Standard Markdown ![alt](path)
+    // Python: md_img_pattern = r'!\[(.*?)\]\((.*?)\)'
+    final mdImgPattern = RegExp(r'!\[(.*?)\]\((.*?)\)');
+    workingContent = workingContent.replaceAllMapped(mdImgPattern, (match) {
+      final altText = match.group(1)!;
+      final oldSrc = match.group(2)!;
+
+      if (oldSrc.startsWith(RegExp(r'http|https|data:')))
+        return match.group(0)!;
+
+      final normalizedSrc =
+          oldSrc.startsWith('/') ? oldSrc.substring(1) : oldSrc;
+      final newFilename = _copyAndHashImage(normalizedSrc, relativeFilePath);
+
+      return "![$altText]($newFilename)";
+    });
+
+    // 3. "Set the Images Free" (Remove <p> or <div> wrappers)
+    // Python: trapped_img_pattern = r'<(p|div)[^>]*?>\s*(!\[.*?\]\(.*?\))\s*</(p|div)>'
+    final trappedImgPattern = RegExp(
+      r'<(p|div)[^>]*?>\s*(!\[.*?\]\(.*?\))\s*</(p|div)>',
+      dotAll: true,
+    );
+    workingContent =
+        workingContent.replaceAllMapped(trappedImgPattern, (match) {
+      return "\n\n${match.group(2)}\n\n";
+    });
+
+    // 4. Transpile Mintlify (Strip silent wrappers)
+    final silentWrappers = [
       'Columns',
       'CardGroup',
       'Steps',
+      'Step',
       'AccordionGroup',
       'Tabs',
-      'Card',
+      'Card'
     ];
-    for (var tag in customTags) {
-      workingContent = workingContent.replaceAll(RegExp('</?$tag[^>]*>'), '');
+    for (var tag in silentWrappers) {
+      workingContent =
+          workingContent.replaceAll(RegExp('</?$tag[^>]*?>', dotAll: true), '');
     }
+
+    // 5. Escape placeholders (Python: <id> -> `<id>`)
+    workingContent = workingContent.replaceAllMapped(
+      RegExp(r'(?<!`|<)<([a-z0-9_-]+)>(?!`|>)'),
+      (match) => '`<${match.group(1)}>`',
+    );
 
     return workingContent;
   }
