@@ -38,14 +38,14 @@ class DocProcessor {
     // 2. Perform Batch Write
     await isar.writeTxn(() async {
       // Upsert all processed documents
-      // await isar.docEntrys.putAll(entries);
-      for (var x in entries) {
-        try {
-          await isar.docEntrys.put(x);
-        } catch (e) {
-          print("Error writting: $e");
-        }
-      }
+      await isar.docEntrys.putAll(entries);
+      // for (var x in entries) {
+      //   try {
+      //     await isar.docEntrys.put(x);
+      //   } catch (e) {
+      //     print("Error writting: $e");
+      //   }
+      // }
     });
 
     stopwatch.stop();
@@ -167,27 +167,46 @@ class DocProcessor {
   }
 
   String _copyAndHashImage(String originalImgPath, String relativeFilePath) {
-    final mdDir = p.dirname(p.join(docsRoot, relativeFilePath));
-    final searchPath = originalImgPath.replaceFirst('/', '');
+    // 1. Normalize the input path (remove leading slash, handle backslashes)
+    final cleanSrc =
+        originalImgPath.replaceFirst(RegExp(r'^/'), '').replaceAll('\\', '/');
 
-    var fullSrcPath = p.normalize(p.join(mdDir, originalImgPath));
-    if (!File(fullSrcPath).existsSync()) {
-      fullSrcPath = p.normalize(p.join(docsRoot, searchPath));
+    // 2. Location A: Relative to the Markdown file
+    final mdDir = p.dirname(p.join(docsRoot, relativeFilePath));
+    final relativePath = p.normalize(p.join(mdDir, cleanSrc));
+
+    // 3. Location B: Relative to the Docs Root (Fallback)
+    final rootPath = p.normalize(p.join(docsRoot, cleanSrc));
+
+    // 4. Location C: Project Root (Often where /assets/ lives in Mintlify)
+    // Since docsRoot is likely 'openclaw/docs', we go up one level
+    final projectRoot = p.dirname(docsRoot);
+    final assetPath = p.normalize(p.join(projectRoot, cleanSrc));
+
+    File? srcFile;
+    if (File(relativePath).existsSync()) {
+      srcFile = File(relativePath);
+    } else if (File(rootPath).existsSync()) {
+      srcFile = File(rootPath);
+    } else if (File(assetPath).existsSync()) {
+      srcFile = File(assetPath);
     }
 
-    final srcFile = File(fullSrcPath);
-    if (srcFile.existsSync()) {
-      final imgFilename = p.basename(fullSrcPath);
+    if (srcFile != null) {
+      final imgFilename = p.basename(srcFile.path);
       final destPath = p.join(imageDest, imgFilename);
       final destFile = File(destPath);
 
-      // Only copy if file is new or modified (hash check)
       if (!destFile.existsSync() || _getHash(srcFile) != _getHash(destFile)) {
         Directory(imageDest).createSync(recursive: true);
         srcFile.copySync(destPath);
       }
       return imgFilename;
     }
+
+    // If we reach here, the image wasn't found (this is why your count is low)
+    print(
+        "⚠️ Image not found: $originalImgPath (tried $relativePath, $rootPath, $assetPath)");
     return originalImgPath;
   }
 
@@ -259,6 +278,13 @@ class DocProcessor {
         }
       }
       cleanContent = content.substring(match.end).trim();
+      // if (meta['title'] == null || meta['title'].isEmpty) {
+      //   final h1Match =
+      //       RegExp(r'^#\s+(.*)', multiLine: true).firstMatch(cleanContent);
+      //   if (h1Match != null) {
+      //     meta['title'] = h1Match.group(1)!.trim();
+      //   }
+      // }
     }
 
     return {"meta": meta, "content": cleanContent};
