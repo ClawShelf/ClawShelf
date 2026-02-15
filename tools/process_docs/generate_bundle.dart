@@ -150,7 +150,7 @@ class DocProcessor {
       'Step',
       'AccordionGroup',
       'Tabs',
-      'Card'
+      // 'Card'
     ];
     for (var tag in silentWrappers) {
       workingContent =
@@ -163,6 +163,15 @@ class DocProcessor {
       (match) => '`<${match.group(1)}>`',
     );
 
+    // After stripping silent wrappers, clean up indentation for custom tags
+    final customTagsWithBuilders = ['Card', 'Step'];
+
+    for (var tag in customTagsWithBuilders) {
+      // This regex finds the tag even if it has leading spaces/tabs and moves it to a new line
+      workingContent = workingContent.replaceAllMapped(
+          RegExp('^[ \t]*<(/?$tag[^>]*?)>', multiLine: true),
+          (match) => '\n<${match.group(1)}>\n');
+    }
     return workingContent;
   }
 

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -8,6 +10,7 @@ import 'package:claw_shelf/components/markdown/card_tag.dart';
 import 'package:claw_shelf/components/markdown/fallback_element.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
+import 'package:path_provider/path_provider.dart';
 
 class CSDocContentPage extends StatefulWidget {
   final Id id; // Pass only the Isar ID
@@ -22,6 +25,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
   late Future<DocEntry?> _docFuture;
 
   late Isar docsIsar;
+  late final String localDocsImagePath;
 
   @override
   void initState() {
@@ -36,6 +40,10 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
     // 1. Wait briefly for the Navigation animation to finish (approx 300ms)
     // This prevents the 'hang' because the UI thread is free to animate.
     await Future.delayed(const Duration(milliseconds: 350));
+
+    final docDir = await getApplicationDocumentsDirectory();
+    // Ensure this matches the 'targetPath/images' you used in SyncLogic
+    localDocsImagePath = '${docDir.path}/images';
 
     // 2. Fetch the actual document from Isar
     return await docsIsar.docEntrys.get(widget.id);
@@ -84,15 +92,24 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
                   data: sanitizedContent,
                   selectable: true,
                   imageBuilder: (uri, title, alt) {
-                    // Because the Python script simplified <img src="/assets/logo.png">
-                    // to ![Logo](logo.png), uri.path is now just 'logo.png'
+                    final fileName = uri.path;
+
+                    // 1. Construct the path to the local (synced) file
+                    final localFile = File('$localDocsImagePath/$fileName');
+
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Image.asset(
-                        'assets/images/${uri.path}',
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image),
-                      ),
+                      child: localFile.existsSync()
+                          ? Image.file(
+                              localFile,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image),
+                            )
+                          : Image.asset(
+                              'assets/images/$fileName', // Fallback to bundle if not in local storage
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image),
+                            ),
                     );
                   },
                   extensionSet: md.ExtensionSet(
