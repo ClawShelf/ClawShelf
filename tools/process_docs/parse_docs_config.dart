@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:claw_shelf/core/engine/isar/document.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class DocParser {
   final Isar isar;
@@ -30,7 +30,7 @@ class DocParser {
         redirectMap[r['source']] = r['destination'];
         // We still store them in the list if you want to keep the AppRedirect collection
         redirectList.add(
-          AppRedirect()
+          AppRedirect(id: isar.appRedirects.autoIncrement())
             ..source = r['source']
             ..destination = r['destination'],
         );
@@ -64,7 +64,7 @@ class DocParser {
     final List<dynamic> languages = data['navigation']?['languages'] ?? [];
 
     for (var lang in languages) {
-      final appNav = AppNavigation()
+      final appNav = AppNavigation(id: isar.appNavigations.autoIncrement())
         ..languageCode = lang['language']
         ..tabs = [];
 
@@ -86,14 +86,14 @@ class DocParser {
     }
 
     // 3. Atomic Write to Isar
-    await isar.writeTxn(() async {
+    await isar.write((isar) {
       // Clear old data
-      await isar.appNavigations.clear();
-      await isar.appRedirects.clear();
+      isar.appNavigations.clear();
+      isar.appRedirects.clear();
 
       // Batch insert resolved data
-      await isar.appNavigations.putAll(navList);
-      await isar.appRedirects.putAll(redirectList);
+      isar.appNavigations.putAll(navList);
+      isar.appRedirects.putAll(redirectList);
     });
 
     print(

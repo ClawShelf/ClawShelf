@@ -1,7 +1,7 @@
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
@@ -74,9 +74,9 @@ class CardWidgetBuilder extends MarkdownElementBuilder {
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
 
     final targetDoc = docsIsar.docEntrys
-        .filter()
+        .where()
         .docIdEqualTo(cleanPath.replaceAll('/', '_'))
-        .findFirstSync();
+        .findFirst();
 
     if (targetDoc != null) {
       CSDocNavigation.open(context, targetDoc);

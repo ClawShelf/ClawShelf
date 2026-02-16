@@ -1,17 +1,19 @@
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 part 'user_setting.g.dart';
 
 @collection
 class UserSetting {
-  Id id = Isar.autoIncrement;
+  final int id;
 
-  @Index(unique: true, replace: true)
-  late String key;
+  @Index(unique: true)
+  String? key;
 
   String? stringValue;
   int? intValue;
   bool? boolValue;
+
+  UserSetting({required this.id});
 
   @ignore
   // Helper to get the value regardless of type
@@ -20,14 +22,16 @@ class UserSetting {
 
 @collection
 class HistoryEntry {
-  Id id = Isar.autoIncrement;
+  final int id;
 
-  @Index(unique: true, replace: true)
-  late String docId;
+  @Index(unique: true)
+  String? docId;
 
   String? title;
   String? emoji;
   String? summary;
 
-  late DateTime lastViewed;
+  DateTime? lastViewed;
+
+  HistoryEntry({required this.id});
 }

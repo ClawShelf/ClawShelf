@@ -2,9 +2,9 @@ import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/screens/doc_content.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class CSDocNavigation {
   static void open(BuildContext context, DocEntry doc) {
@@ -36,10 +36,10 @@ class CSDocNavigation {
 
     // 3. Find the matching document
     // We check if the docPath ends with our link or matches it without .md
-    final targetDoc = docsIsar.docEntrys.filter().anyOf([
+    final targetDoc = docsIsar.docEntrys.where().anyOf([
       cleanPath,
       "${cleanPath}_index",
-    ], (db, p) => db.docIdEqualTo(p)).findFirstSync();
+    ], (db, p) => db.docIdEqualTo(p)).findFirst();
 
     return targetDoc;
   }

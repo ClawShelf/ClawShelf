@@ -48,3 +48,4 @@ app.*.map.json
 /assets/*.lock
 tools/*.so
 dist/
+libisar.so

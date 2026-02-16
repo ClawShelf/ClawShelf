@@ -3,12 +3,12 @@ import 'package:claw_shelf/core/engine/isar/user_setting.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
 import 'package:claw_shelf/components/recent_card.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/screens/category_list.dart';
 import 'package:claw_shelf/screens/search.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class CSMainScreen extends StatefulWidget {
   const CSMainScreen({super.key});
@@ -35,7 +35,7 @@ class _CSMainScreenState extends State<CSMainScreen> {
 
   // Load the navigation tree from Isar
   Future<void> _loadConfig() async {
-    final config = await docsIsar.appNavigations.where().findFirst();
+    final config = docsIsar.appNavigations.where().findFirst();
     setState(() => _config = config);
   }
 
@@ -312,11 +312,10 @@ class _CSMainScreenState extends State<CSMainScreen> {
   Widget _biuldRecentlyViewed() {
     return StreamBuilder<List<HistoryEntry>>(
       // Watch the DB: Sort by lastAccessed, limit to 5 most recent
-      stream: prefsIsar.historyEntrys
-          .where()
-          .sortByLastViewedDesc()
-          .limit(5)
-          .watch(fireImmediately: true),
+      stream: prefsIsar.historyEntrys.where().sortByLastViewedDesc().watch(
+        fireImmediately: true,
+        limit: 5,
+      ),
       builder: (context, snapshot) {
         final docs = snapshot.data ?? [];
 
@@ -355,17 +354,17 @@ class _CSMainScreenState extends State<CSMainScreen> {
                       summary: historyEntry.summary,
                       onTap: () async {
                         final doc = docsIsar.docEntrys
-                            .filter()
+                            .where()
                             .docIdEqualTo(historyEntry.docId)
-                            .findFirstSync();
+                            .findFirst();
 
                         if (doc == null) {
                           // Since this was missing, we delete all the history referencing this ID
 
-                          await prefsIsar.writeTxn(() async {
+                          await prefsIsar.writeAsync((isar) async {
                             // Delete EVERYTHING for this ID in one single disk trip
-                            await prefsIsar.historyEntrys
-                                .filter()
+                            isar.historyEntrys
+                                .where()
                                 .docIdEqualTo(historyEntry.docId)
                                 .deleteAll();
                           });

@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:crypto/crypto.dart';
-import 'package:isar/isar.dart';
 
 class DocProcessor {
   final Isar isar;
@@ -36,16 +36,9 @@ class DocProcessor {
     }
 
     // 2. Perform Batch Write
-    await isar.writeTxn(() async {
+    await isar.write((isar) async {
       // Upsert all processed documents
-      await isar.docEntrys.putAll(entries);
-      // for (var x in entries) {
-      //   try {
-      //     await isar.docEntrys.put(x);
-      //   } catch (e) {
-      //     print("Error writting: $e");
-      //   }
-      // }
+      isar.docEntrys.putAll(entries);
     });
 
     stopwatch.stop();
@@ -68,7 +61,7 @@ class DocProcessor {
       relativePath,
     );
 
-    return DocEntry()
+    return DocEntry(id: isar.docEntrys.autoIncrement())
       ..docId =
           relativePath.replaceAll(RegExp(r'/|\\'), '_').replaceAll('.md', '')
       ..docPath = relativePath

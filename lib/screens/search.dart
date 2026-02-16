@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class CSSearchScreen extends StatefulWidget {
   final String lang;
@@ -40,7 +40,7 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
 
       // Query across title, summary, and full content
       final results = await docsIsar.docEntrys
-          .filter()
+          .where()
           .langEqualTo(widget.lang) // Localization filter
           .and()
           .group(
@@ -51,8 +51,7 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
                 .or()
                 .contentContains(query, caseSensitive: false),
           )
-          .limit(40) // Limit for performance
-          .findAll();
+          .findAll(limit: 40);
 
       setState(() => _results = results);
     });

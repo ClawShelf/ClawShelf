@@ -7,8 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
-import 'package:isar/isar.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class DocSyncManager {
   static const String dbName = 'default';
@@ -22,8 +22,8 @@ class DocSyncManager {
       final int remoteTimestamp = manifest[MetadataKeys.bundleVersion];
 
       // Query local Isar using the SAME key used in the build.json
-      final localMeta = await isar.appMetadatas
-          .filter()
+      final localMeta = isar.appMetadatas
+          .where()
           .keyEqualTo(
             MetadataKeys.bundleVersion,
           ) // Use bundleVersion, not buildDate

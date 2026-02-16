@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/services/isar_open.dart';
 import 'package:claw_shelf/services/sync_logic.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ import 'package:claw_shelf/core/engine/manager/document_manager.dart';
 import 'package:claw_shelf/screens/main_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// This runs in a separate Isolate to prevent UI jank during extraction
@@ -67,8 +68,8 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
 
       // 3. Open Final Instance
       setState(() => _statusMessage = "Loading documents...");
-      final isar = await Isar.open(
-        [
+      final isar = await openIsarSafe(
+        schemas: [
           DocEntrySchema,
           AppMetadataSchema,
           AppNavigationSchema,

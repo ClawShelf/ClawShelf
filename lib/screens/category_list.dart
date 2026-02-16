@@ -1,9 +1,9 @@
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class CSCategoryListPage extends StatelessWidget {
   final List<String> categories;
@@ -26,12 +26,12 @@ class CSCategoryListPage extends StatelessWidget {
       appBar: AppBar(title: Text(title)), // Uses your custom title
       body: FutureBuilder<List<DocEntry>>(
         future: docsIsar.docEntrys
-            .filter()
+            .where()
             .langEqualTo(lang)
             .and()
             .anyOf(categories, (db, list) => db.categoryEqualTo(list))
             .sortByTitle()
-            .findAll(),
+            .findAllAsync(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

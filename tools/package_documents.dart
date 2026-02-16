@@ -6,8 +6,9 @@ import 'package:args/args.dart';
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/constants/urls.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/services/isar_open.dart';
 import 'package:crypto/crypto.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'process_docs/generate_bundle.dart';
 import 'process_docs/parse_docs_config.dart';
 import 'package:path/path.dart';
@@ -87,10 +88,11 @@ void main(List<String> arguments) async {
     isarDBFileName = argParseResult['isar_name'];
   }
 
-  await Isar.initializeIsarCore(download: true);
-  final isar = await Isar.open(
+  await Isar.initialize("./libisar.so");
+  // await Isar.initializeIsarCore(download: true);
+  final isar = await openIsarSafe(
     name: isarDBFileName,
-    [
+    schemas: [
       DocEntrySchema,
       AppMetadataSchema,
       AppNavigationSchema,
@@ -101,12 +103,12 @@ void main(List<String> arguments) async {
     inspector: true,
   );
 
-  isar.writeTxnSync(() {
-    isar.docEntrys.clearSync();
-    isar.appNavigations.clearSync();
-    isar.appRedirects.clearSync();
-    isar.appMetadatas.clearSync();
-    isar.appImages.clearSync();
+  isar.write((isar) {
+    isar.docEntrys.clear();
+    isar.appNavigations.clear();
+    isar.appRedirects.clear();
+    isar.appMetadatas.clear();
+    isar.appImages.clear();
   });
 
   final imageDir = Directory(join(outputPath, 'images'));
@@ -126,17 +128,17 @@ void main(List<String> arguments) async {
   final timestamp = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
 
   // Update a final "Bundle Version" metadata
-  await isar.writeTxn(() async {
-    await isar.appMetadatas.put(
-      AppMetadata()
+  await isar.write((isar) async {
+    isar.appMetadatas.put(
+      AppMetadata(id: isar.appMetadatas.autoIncrement())
         ..key = MetadataKeys.bundleVersion
         ..valueInt = timestamp,
     );
 
     // ADD THIS: Store the SHA so the app knows its source
     if (openClawSha != null) {
-      await isar.appMetadatas.put(
-        AppMetadata()
+      isar.appMetadatas.put(
+        AppMetadata(id: isar.appMetadatas.autoIncrement())
           ..key = MetadataKeys.openClawSha
           ..valueString = openClawSha,
       );

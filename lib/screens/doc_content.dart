@@ -4,7 +4,7 @@ import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:claw_shelf/components/markdown/card_tag.dart';
 import 'package:claw_shelf/components/markdown/fallback_element.dart';
@@ -13,7 +13,7 @@ import 'package:claw_shelf/services/doc_navigation.dart';
 import 'package:path_provider/path_provider.dart';
 
 class CSDocContentPage extends StatefulWidget {
-  final Id id; // Pass only the Isar ID
+  final int id; // Pass only the Isar ID
 
   const CSDocContentPage({super.key, required this.id});
 
@@ -46,7 +46,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
     localDocsImagePath = '${docDir.path}/images';
 
     // 2. Fetch the actual document from Isar
-    return await docsIsar.docEntrys.get(widget.id);
+    return docsIsar.docEntrys.get(widget.id);
   }
 
   @override
