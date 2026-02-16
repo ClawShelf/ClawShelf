@@ -9,6 +9,7 @@ import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/isar_open.dart';
 import 'package:crypto/crypto.dart';
 import 'package:isar_plus/isar_plus.dart';
+import 'download_isar_plus_lib.dart';
 import 'process_docs/generate_bundle.dart';
 import 'process_docs/parse_docs_config.dart';
 import 'package:path/path.dart';
@@ -88,6 +89,9 @@ void main(List<String> arguments) async {
     isarDBFileName = argParseResult['isar_name'];
   }
 
+  if (!File('./libisar.so').existsSync()) {
+    await downloadIsarPlusLinux(version: '1.2.2', targetPath: '.');
+  }
   await Isar.initialize("./libisar.so");
   // await Isar.initializeIsarCore(download: true);
   final isar = await openIsarSafe(
