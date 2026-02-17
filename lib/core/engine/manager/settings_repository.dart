@@ -31,9 +31,9 @@ class SettingsRepository {
 
   /// Adds a document to the history or updates its timestamp if it exists
   Future<void> addToHistory(DocEntry doc) async {
-    await _prefsIsar.writeAsync((isar) async {
+    await _prefsIsar.write((isar) {
       // 1. Put the new/updated entry
-      _prefsIsar.historyEntrys.put(
+      isar.historyEntrys.put(
         HistoryEntry(id: isar.userSettings.autoIncrement())
           ..docId = doc.docId!
           ..title = doc.title
@@ -43,14 +43,14 @@ class SettingsRepository {
       );
 
       // 2. Maintain only the last 5 entries
-      final allHistory = _prefsIsar.historyEntrys
+      final allHistory = isar.historyEntrys
           .where()
           .sortByLastViewedDesc()
           .findAll();
 
       if (allHistory.length > 5) {
         final idsToDelete = allHistory.sublist(5).map((e) => e.id).toList();
-        _prefsIsar.historyEntrys.deleteAll(idsToDelete);
+        isar.historyEntrys.deleteAll(idsToDelete);
       }
     });
   }
