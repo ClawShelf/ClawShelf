@@ -1,6 +1,6 @@
 PODS:
   - Flutter (1.0.0)
-  - isar_flutter_libs (1.0.0):
+  - isar_plus_flutter_libs (1.0.0):
     - Flutter
   - package_info_plus (0.4.5):
     - Flutter
@@ -12,7 +12,7 @@ PODS:
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
-  - isar_flutter_libs (from `.symlinks/plugins/isar_flutter_libs/ios`)
+  - isar_plus_flutter_libs (from `.symlinks/plugins/isar_plus_flutter_libs/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -20,8 +20,8 @@ DEPENDENCIES:
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
-  isar_flutter_libs:
-    :path: ".symlinks/plugins/isar_flutter_libs/ios"
+  isar_plus_flutter_libs:
+    :path: ".symlinks/plugins/isar_plus_flutter_libs/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   sqflite_darwin:
@@ -31,7 +31,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  isar_flutter_libs: 9fc2cfb928c539e1b76c481ba5d143d556d94920
+  isar_plus_flutter_libs: bea5f6058f18eae2da310c97a84bfdf73657b2fd
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
