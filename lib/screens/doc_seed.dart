@@ -79,6 +79,13 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
         name: DocSyncManager.dbName,
         directory: dir.path,
         inspector: MetadataKeys.inspectDocsIsar,
+        onRecoveryNeeded: () async {
+          setState(() => _statusMessage = "Seeding document library...");
+          final isarData = await rootBundle.load(
+            'assets/${DocSyncManager.dbName}.isar',
+          );
+          await localDbFile.writeAsBytes(isarData.buffer.asUint8List());
+        },
       );
 
       // 4. Register and Start Background Sync

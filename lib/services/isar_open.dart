@@ -7,6 +7,7 @@ Future<Isar> openIsarSafe({
   required String directory,
   String name = 'default',
   bool inspector = false,
+  Future<void> Function()? onRecoveryNeeded, // Your new callback
 }) async {
   try {
     // 1. Attempt to open normally
@@ -33,6 +34,12 @@ Future<Isar> openIsarSafe({
     if (lockFile.existsSync()) {
       await lockFile.delete();
       print('🗑️ Deleted old .lock file');
+    }
+
+    // 3. Trigger your callback to copy the "fresh" isar file from assets
+    if (onRecoveryNeeded != null) {
+      print('📂 Executing recovery callback (copying asset bundle)...');
+      await onRecoveryNeeded();
     }
 
     // 5. Try opening again (this will create a fresh v1.1.0 database)
