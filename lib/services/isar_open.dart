@@ -43,7 +43,7 @@ Future<Isar> openIsarSafe({
     }
 
     // 5. Try opening again (this will create a fresh v1.1.0 database)
-    return await Isar.open(
+    return Isar.open(
       schemas: schemas,
       directory: directory,
       name: name,
