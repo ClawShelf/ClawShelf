@@ -98,4 +98,8 @@ class SettingsRepository {
       );
     }
   }
+
+  Stream<void> watchSetting(String key) {
+    return _prefsIsar.userSettings.where().keyEqualTo(key).watchLazy();
+  }
 }
