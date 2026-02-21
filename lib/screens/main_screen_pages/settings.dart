@@ -1,7 +1,8 @@
+import 'package:claw_shelf/core/constants/keys.dart';
+import 'package:claw_shelf/core/engine/isar/user_setting.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:isar_plus/isar_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CSSettingsPage extends StatefulWidget {
@@ -12,8 +13,6 @@ class CSSettingsPage extends StatefulWidget {
 }
 
 class _CSSettingsPageState extends State<CSSettingsPage> {
-  late Isar _isar;
-
   // Accessing the repository via GetIt
   final _repo = GetIt.I<SettingsRepository>();
 
@@ -28,17 +27,22 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
           // Dark Mode Toggle using your Repo logic
           StreamBuilder(
             // We watch the collection to react to changes
-            stream: _repo.watchSetting('dark_mode'),
+            stream: _repo.watchSetting(MetadataKeys.isDarkMode),
             builder: (context, snapshot) {
               // Using your isDarkMode() logic for the initial/current state
-              final isDark = _repo.isDarkMode();
+              UserSetting? isDarkRecord = _repo.get(MetadataKeys.isDarkMode);
+              isDarkRecord ??= UserSetting(id: -1)..boolValue = false;
 
               return SwitchListTile(
                 secondary: const Icon(Icons.dark_mode_outlined),
                 title: const Text("Dark Mode"),
                 subtitle: const Text("Reduce eye strain in low light"),
-                value: isDark,
-                onChanged: (bool value) => _repo.setDarkMode(value),
+                value: isDarkRecord.boolValue!,
+                onChanged: (bool value) {
+                  // isDarkRecord!..boolValue = value;
+                  isDarkRecord!.boolValue = value;
+                  _repo.saveSettings(isDarkRecord);
+                },
               );
             },
           ),

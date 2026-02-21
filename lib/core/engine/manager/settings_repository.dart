@@ -10,22 +10,22 @@ class SettingsRepository {
 
   SettingsRepository(this._prefsIsar);
 
-  // Example: Dark Mode
-  bool isDarkMode() {
-    final setting = _prefsIsar.userSettings
-        .where()
-        .keyEqualTo('dark_mode')
-        .findFirst();
-    return setting?.value == 'true';
+  UserSetting? get(String key) {
+    return _prefsIsar.userSettings.where().keyEqualTo(key).findFirst();
   }
 
-  Future<void> setDarkMode(bool value) async {
-    await _prefsIsar.writeAsync((isar) async {
-      isar.userSettings.put(
-        UserSetting(id: isar.userSettings.autoIncrement())
-          ..key = 'dark_mode'
-          ..boolValue = value,
-      );
+  Future saveSettings(UserSetting setting) async {
+    UserSetting record;
+    if (setting.id == -1) {
+      record = UserSetting(id: _prefsIsar.userSettings.autoIncrement())
+        ..boolValue = setting.boolValue
+        ..intValue = setting.intValue
+        ..stringValue = setting.stringValue;
+    } else {
+      record = setting;
+    }
+    await _prefsIsar.writeAsync((isar) {
+      isar.userSettings.put(record);
     });
   }
 

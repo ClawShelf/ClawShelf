@@ -7,6 +7,9 @@ class MetadataKeys {
   static const String jsonIsarHash = 'isar_hash';
   static const String jsonZipUrl = 'zip_url';
 
+  // settings keys
+  static const String isDarkMode = 'dark_mode';
+
   // debug
   static const bool inspectDocsIsar = true;
 

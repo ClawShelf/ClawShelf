@@ -182,14 +182,21 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
     List<String> categories, {
     bool isTall = false,
   }) {
+    // Access the current theme colors
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        // Use surfaceContainer or surface for the card background
+        color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.05),
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05,
+            ),
             blurRadius: 10,
             spreadRadius: 2,
           ),
@@ -205,9 +212,8 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
               MaterialPageRoute(
                 builder: (context) => CSCategoryListPage(
                   title: title,
-                  categories:
-                      categories, // Maps to your Python 'category' logic
-                  lang: 'en', // 'en' or 'zh'
+                  categories: categories,
+                  lang: 'en',
                 ),
               ),
             );
@@ -218,7 +224,8 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  // Keep the icon background subtle
+                  color: color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 28),
@@ -226,9 +233,11 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
+                  // Use onSurface to ensure text is black in light and white in dark
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],

@@ -51,6 +51,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text("Documentation")),
       body: FutureBuilder<DocEntry?>(
@@ -128,14 +129,30 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
                       handleInternalLink(href, context);
                     }
                   },
-                  styleSheet: MarkdownStyleSheet(
-                    code: const TextStyle(
-                      backgroundColor: Color(0xFFEEEEEE),
+                  styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                    // Inline Code (the one causing the "white-on-white" issue)
+                    code: TextStyle(
+                      backgroundColor: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.1),
+                      color: theme
+                          .colorScheme
+                          .primary, // Makes the code stand out in a brand color
                       fontFamily: 'monospace',
+                      fontSize: 14,
                     ),
+                    // Code Blocks (Triple Backticks)
                     codeblockDecoration: BoxDecoration(
-                      color: const Color(0xFF2D2D2D),
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.black54
+                          : const Color(0xFF2D2D2D),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                    // Fix for standard text color if needed
+                    p: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -158,27 +175,67 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
   }
 
   Widget _buildSkeletonLoader() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Define a base color that works for both modes
+    // In light mode: a light grey
+    // In dark mode: a subtle charcoal/grey
+    final Color baseColor = isDark
+        ? theme.colorScheme.surfaceContainerHighest
+        : Colors.grey[300]!;
+
+    final Color highlightColor = isDark
+        ? theme.colorScheme.surfaceContainer
+        : Colors.grey[100]!;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(width: 60, height: 60, color: Colors.grey[300]),
+          // Icon/Image Placeholder
+          _skeletonBox(width: 60, height: 60, color: baseColor),
           const SizedBox(height: 20),
-          Container(width: 200, height: 30, color: Colors.grey[300]),
+          // Title Placeholder
+          _skeletonBox(width: 200, height: 30, color: baseColor),
           const SizedBox(height: 20),
-          Container(
+          // Content Lines
+          _skeletonBox(
             width: double.infinity,
             height: 20,
-            color: Colors.grey[200],
+            color: highlightColor,
           ),
           const SizedBox(height: 10),
-          Container(
+          _skeletonBox(
             width: double.infinity,
             height: 20,
-            color: Colors.grey[200],
+            color: highlightColor,
+          ),
+          const SizedBox(height: 10),
+          _skeletonBox(
+            width: MediaQuery.of(context).size.width * 0.7,
+            height: 20,
+            color: highlightColor,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _skeletonBox({
+    required double width,
+    required double height,
+    required Color color,
+  }) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(
+          8,
+        ), // Rounded corners match your Bento cards
       ),
     );
   }

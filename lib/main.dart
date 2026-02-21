@@ -48,12 +48,28 @@ class ClawShelfApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      scaffoldMessengerKey: snackbarKey, // Register the key here
-      title: 'ClawShelf',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: CSDocSeedScreen(),
+    final repo = GetIt.I<SettingsRepository>();
+    return StreamBuilder(
+      stream: repo.watchSetting(MetadataKeys.isDarkMode),
+      builder: (context, snapshot) {
+        // Using your isDarkMode() logic for the initial/current state
+        UserSetting? isDarkRecord = repo.get(MetadataKeys.isDarkMode);
+        isDarkRecord ??= UserSetting(id: -1)..boolValue = false;
+
+        return MaterialApp(
+          scaffoldMessengerKey: snackbarKey, // Register the key here
+          title: 'ClawShelf',
+          debugShowCheckedModeBanner: false,
+          themeMode: isDarkRecord.boolValue == true
+              ? ThemeMode.dark
+              : ThemeMode.light,
+          theme: ThemeData(
+            colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+          ),
+          darkTheme: ThemeData.dark(useMaterial3: true),
+          home: CSDocSeedScreen(),
+        );
+      },
     );
   }
 }
