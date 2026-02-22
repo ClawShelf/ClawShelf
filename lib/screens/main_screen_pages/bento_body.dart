@@ -2,6 +2,7 @@ import 'package:claw_shelf/components/recent_card.dart';
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/core/engine/isar/user_setting.dart';
+import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:claw_shelf/screens/category_list.dart';
 import 'package:claw_shelf/screens/doc_index.dart';
 import 'package:claw_shelf/screens/search.dart';
@@ -20,12 +21,14 @@ class CSMainPageBentoBody extends StatefulWidget {
 class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
   late Isar docsIsar;
   late Isar prefsIsar;
+  late SettingsRepository settingsRepository;
 
   @override
   void initState() {
     super.initState();
     docsIsar = GetIt.instance(instanceName: MetadataKeys.docsIsarKey);
     prefsIsar = GetIt.instance(instanceName: MetadataKeys.preferenceIsarKey);
+    settingsRepository = GetIt.instance();
   }
 
   @override
@@ -100,7 +103,11 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
             child: InkWell(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => CSDocIndexScreen()),
+                MaterialPageRoute(
+                  builder: (context) => CSDocIndexScreen(
+                    lang: settingsRepository.getLanguage().stringValue!,
+                  ),
+                ),
               ),
               child: Container(
                 height: 100,
@@ -141,7 +148,11 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => CSSearchScreen(lang: 'en')),
+          MaterialPageRoute(
+            builder: (context) => CSSearchScreen(
+              lang: settingsRepository.getLanguage().stringValue!,
+            ),
+          ),
         );
       },
       child: Hero(
@@ -213,7 +224,7 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
                 builder: (context) => CSCategoryListPage(
                   title: title,
                   categories: categories,
-                  lang: 'en',
+                  lang: settingsRepository.getLanguage().stringValue!,
                 ),
               ),
             );

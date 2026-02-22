@@ -9,6 +9,11 @@ class MetadataKeys {
 
   // settings keys
   static const String isDarkMode = 'dark_mode';
+  static const String language = 'language';
+
+  // language keys
+  static const String languageZHHans = 'zh-Hans';
+  static const String languageEN = 'en';
 
   // debug
   static const bool inspectDocsIsar = true;

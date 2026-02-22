@@ -27,7 +27,7 @@ class CSDocNavigation {
 
     // 1. Normalize the path
     // Remove leading/trailing slashes and lower-case it
-    String cleanPath = path.toLowerCase().trim();
+    String cleanPath = path.trim();
     if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
     if (cleanPath.endsWith('/')) {
       cleanPath = cleanPath.substring(0, cleanPath.length - 1);

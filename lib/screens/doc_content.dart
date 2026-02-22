@@ -11,6 +11,7 @@ import 'package:claw_shelf/components/markdown/fallback_element.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CSDocContentPage extends StatefulWidget {
   final int id; // Pass only the Isar ID
@@ -59,7 +60,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
         builder: (context, snapshot) {
           // 1. While waiting for animation/fetch, show a Skeleton/Loading
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return _buildSkeletonLoader();
+            return _buildSkeletonLoader(context);
           }
 
           // 2. Handle errors or missing docs
@@ -130,29 +131,50 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
                     }
                   },
                   styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                    // Inline Code (the one causing the "white-on-white" issue)
                     code: TextStyle(
-                      backgroundColor: theme.colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.1),
-                      color: theme
-                          .colorScheme
-                          .primary, // Makes the code stand out in a brand color
+                      // 🔥 POP LOGIC:
+                      // Light Mode: White text on dark "pills" (keep as is, it looks great)
+                      // Dark Mode: Brighter, bold lavender/purple to make it glow
+                      color: theme.brightness == Brightness.light
+                          ? Colors.white
+                          : theme
+                                .colorScheme
+                                .primary, // Use a lighter/brighter variant
+                      backgroundColor: theme.brightness == Brightness.light
+                          ? const Color(0xFF424242)
+                          : theme.colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.15,
+                            ),
+                      fontWeight: theme.brightness == Brightness.dark
+                          ? FontWeight
+                                .w500 // Slightly thicker in dark mode to prevent "bleeding"
+                          : FontWeight.normal,
                       fontFamily: 'monospace',
                       fontSize: 14,
                     ),
-                    // Code Blocks (Triple Backticks)
                     codeblockDecoration: BoxDecoration(
                       color: theme.brightness == Brightness.dark
-                          ? Colors.black54
+                          ? Colors
+                                .black // Pure black makes the code text pop more than grey
                           : const Color(0xFF2D2D2D),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: theme.colorScheme.outlineVariant,
+                        color: theme.brightness == Brightness.dark
+                            ? theme.colorScheme.primary.withValues(
+                                alpha: 0.3,
+                              ) // Branded border
+                            : theme.colorScheme.outlineVariant.withValues(
+                                alpha: 0.2,
+                              ),
                       ),
                     ),
-                    // Fix for standard text color if needed
                     p: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurface,
+                    ),
+                    // Optional: Match the H1/H2 colors to your primary brand color
+                    h1: theme.textTheme.headlineMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -164,9 +186,13 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
     );
   }
 
-  void handleInternalLink(String href, BuildContext context) {
+  void handleInternalLink(String href, BuildContext context) async {
     // 1. Skip external URLs
-    if (href.startsWith('http') || href.startsWith('mailto:')) {
+    if (href.startsWith('http')) {
+      final url = Uri.parse(href);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
       // Use url_launcher to open in browser
       return;
     }
@@ -174,7 +200,7 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
     CSDocNavigation.navigateToDoc(context, href);
   }
 
-  Widget _buildSkeletonLoader() {
+  Widget _buildSkeletonLoader(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

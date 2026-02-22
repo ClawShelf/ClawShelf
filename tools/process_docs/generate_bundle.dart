@@ -215,15 +215,28 @@ class DocProcessor {
   String _getHash(File file) => md5.convert(file.readAsBytesSync()).toString();
 
   Map<String, dynamic> _extractMetadata(String content, String relativePath) {
-    final parts = relativePath.replaceAll('\\', '/').split('/');
+    final normalizedPath = relativePath.replaceAll('\\', '/');
+    final parts = normalizedPath.split('/');
 
-    // Logic: If path starts with zh-CN, lang is zh. Otherwise en.
-    String lang = parts[0] == 'zh-CN' ? 'zh' : 'en';
+    // 1. Improved Language Detection
+    // Mapping 'zh-CN' folder to 'zh-Hans' standard
+    String lang = 'en';
+    if (parts[0] == 'zh-CN' || parts[0] == 'zh-Hans') {
+      lang = 'zh-Hans';
+    } else if (parts[0] == 'zh-Hant' || parts[0] == 'zh-HK') {
+      lang = 'zh-Hant';
+    }
 
-    // Category is usually the folder name
-    String category = parts.length > (lang == 'zh' ? 2 : 1)
-        ? parts[lang == 'zh' ? 1 : 0]
-        : 'general';
+    // 2. Consistent Category Extraction
+    // If we are in a language subfolder, the category is the second part
+    // Path: zh-CN/Installation/index.md -> lang: zh-Hans, category: Installation
+    // Path: Fundamentals/getting-started.md -> lang: en, category: Fundamentals
+    String category = 'general';
+    if (lang.startsWith('zh')) {
+      if (parts.length > 2) category = parts[1];
+    } else {
+      if (parts.length > 1) category = parts[0];
+    }
 
     final yamlPattern = RegExp(r'^---\s*\n(.*?)\n---\s*\n', dotAll: true);
     final match = yamlPattern.firstMatch(content);

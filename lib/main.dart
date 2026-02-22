@@ -4,6 +4,7 @@ import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
 import 'package:claw_shelf/services/isar_open.dart';
 import 'package:flutter/material.dart';
 import 'package:claw_shelf/screens/doc_seed.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,14 +26,14 @@ Future injectUserPref() async {
     inspector: !MetadataKeys.inspectDocsIsar,
   );
 
+  final settingsRepo = SettingsRepository(prefsIsar);
+  settingsRepo.seedDefaultSettings();
+
   getIt.registerSingleton<Isar>(
     prefsIsar,
     instanceName: MetadataKeys.preferenceIsarKey,
   );
-  getIt.registerLazySingleton(
-    () =>
-        SettingsRepository(getIt(instanceName: MetadataKeys.preferenceIsarKey)),
-  );
+  getIt.registerLazySingleton(() => settingsRepo);
 }
 
 void main() async {
@@ -50,11 +51,11 @@ class ClawShelfApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = GetIt.I<SettingsRepository>();
     return StreamBuilder(
-      stream: repo.watchSetting(MetadataKeys.isDarkMode),
+      stream: repo.watchAllSettings(),
       builder: (context, snapshot) {
         // Using your isDarkMode() logic for the initial/current state
-        UserSetting? isDarkRecord = repo.get(MetadataKeys.isDarkMode);
-        isDarkRecord ??= UserSetting(id: -1)..boolValue = false;
+        final isDarkRecord = repo.getIsDarkMode();
+        final langCode = repo.getLanguage();
 
         return MaterialApp(
           scaffoldMessengerKey: snackbarKey, // Register the key here
@@ -67,6 +68,20 @@ class ClawShelfApp extends StatelessWidget {
             colorScheme: .fromSeed(seedColor: Colors.deepPurple),
           ),
           darkTheme: ThemeData.dark(useMaterial3: true),
+
+          locale: Locale(langCode.stringValue!),
+          supportedLocales: const [
+            Locale(MetadataKeys.languageEN),
+            Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+            // Locale(MetadataKeys.languageZHHans),
+          ],
+          localizationsDelegates: const [
+            // Add your localization delegates here (GlobalMaterialLocalizations, etc.)
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+
           home: CSDocSeedScreen(),
         );
       },

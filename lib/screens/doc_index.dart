@@ -6,7 +6,8 @@ import 'package:get_it/get_it.dart';
 import 'package:isar_plus/isar_plus.dart';
 
 class CSDocIndexScreen extends StatefulWidget {
-  const CSDocIndexScreen({super.key});
+  final String lang;
+  const CSDocIndexScreen({super.key, required this.lang});
 
   @override
   State<CSDocIndexScreen> createState() => _CSDocIndexScreenState();
@@ -26,7 +27,10 @@ class _CSDocIndexScreenState extends State<CSDocIndexScreen> {
 
   Future<void> _loadConfig() async {
     // Fetch navigation from Isar Plus
-    final config = docsIsar.appNavigations.where().findFirst();
+    final config = docsIsar.appNavigations
+        .where()
+        .languageCodeEqualTo(widget.lang)
+        .findFirst();
     if (mounted) {
       setState(() {
         _config = config;

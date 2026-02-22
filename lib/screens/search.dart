@@ -39,7 +39,7 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
       }
 
       // Query across title, summary, and full content
-      final results = await docsIsar.docEntrys
+      final results = docsIsar.docEntrys
           .where()
           .langEqualTo(widget.lang) // Localization filter
           .and()

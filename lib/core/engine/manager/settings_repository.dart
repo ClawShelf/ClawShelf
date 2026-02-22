@@ -29,6 +29,22 @@ class SettingsRepository {
     });
   }
 
+  UserSetting getIsDarkMode() {
+    var darkModeRecord = get(MetadataKeys.isDarkMode);
+    darkModeRecord ??= UserSetting(id: -1)
+      ..boolValue = false
+      ..key = MetadataKeys.isDarkMode;
+    return darkModeRecord;
+  }
+
+  UserSetting getLanguage() {
+    var languageRecord = get(MetadataKeys.language);
+    languageRecord ??= UserSetting(id: -1)
+      ..stringValue = 'en'
+      ..key = MetadataKeys.language;
+    return languageRecord;
+  }
+
   /// Adds a document to the history or updates its timestamp if it exists
   Future<void> addToHistory(DocEntry doc) async {
     await _prefsIsar.write((isar) {
@@ -60,6 +76,12 @@ class SettingsRepository {
     return _prefsIsar.historyEntrys.where().sortByLastViewedDesc().findAll(
       limit: 5,
     );
+  }
+
+  void clearRecentlyViewed() {
+    _prefsIsar.write((isar) {
+      isar.historyEntrys.clear();
+    });
   }
 
   // Inside your DocSeed screen or your main bootstrap logic
@@ -101,5 +123,38 @@ class SettingsRepository {
 
   Stream<void> watchSetting(String key) {
     return _prefsIsar.userSettings.where().keyEqualTo(key).watchLazy();
+  }
+
+  Stream<void> watchAllSettings() {
+    return _prefsIsar.userSettings.watchLazy(fireImmediately: true);
+  }
+
+  void seedDefaultSettings() {
+    // Define your default "ClawShelf" configuration
+    final defaults = {
+      MetadataKeys.isDarkMode: false,
+      MetadataKeys.language: 'en',
+      // 'show_history': true,
+    };
+
+    _prefsIsar.write((isar) {
+      for (var entry in defaults.entries) {
+        final exists = _prefsIsar.userSettings
+            .where()
+            .keyEqualTo(entry.key)
+            .findFirst();
+
+        if (exists == null) {
+          _prefsIsar.userSettings.put(
+            UserSetting(id: _prefsIsar.userSettings.autoIncrement())
+              ..key = entry.key
+              ..boolValue = entry.value is bool ? entry.value as bool : null
+              ..stringValue = entry.value is String
+                  ? entry.value as String
+                  : null,
+          );
+        }
+      }
+    });
   }
 }

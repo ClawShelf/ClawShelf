@@ -30,8 +30,7 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
             stream: _repo.watchSetting(MetadataKeys.isDarkMode),
             builder: (context, snapshot) {
               // Using your isDarkMode() logic for the initial/current state
-              UserSetting? isDarkRecord = _repo.get(MetadataKeys.isDarkMode);
-              isDarkRecord ??= UserSetting(id: -1)..boolValue = false;
+              final isDarkRecord = _repo.getIsDarkMode();
 
               return SwitchListTile(
                 secondary: const Icon(Icons.dark_mode_outlined),
@@ -39,8 +38,7 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
                 subtitle: const Text("Reduce eye strain in low light"),
                 value: isDarkRecord.boolValue!,
                 onChanged: (bool value) {
-                  // isDarkRecord!..boolValue = value;
-                  isDarkRecord!.boolValue = value;
+                  isDarkRecord.boolValue = value;
                   _repo.saveSettings(isDarkRecord);
                 },
               );
@@ -50,13 +48,20 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
           const Divider(),
           _buildHeader("Content & Localization"),
 
-          ListTile(
-            leading: const Icon(Icons.language_rounded),
-            title: const Text("App Language"),
-            subtitle: const Text("English"), // You can expand this later
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // Implementation for language picker dialog
+          StreamBuilder(
+            stream: _repo.watchSetting(MetadataKeys.language),
+            builder: (context, snapshot) {
+              final langaugeRecord = _repo.getLanguage();
+
+              return ListTile(
+                leading: const Icon(Icons.language_rounded),
+                title: const Text("App Language"),
+                subtitle: Text(
+                  langaugeRecord.stringValue == 'en' ? "English" : '中文',
+                ), // You can expand this later
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showLanguageDialog(context, langaugeRecord),
+              );
             },
           ),
 
@@ -134,11 +139,63 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
           TextButton(
             onPressed: () {
               // You can add a clearHistory() method to your Repository
+              _repo.clearRecentlyViewed();
+              GetIt.instance<GlobalKey<ScaffoldMessengerState>>().currentState
+                  ?.showSnackBar(
+                    const SnackBar(content: Text("Recent history cleared.")),
+                  );
               Navigator.pop(context);
             },
             child: const Text("Clear", style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(
+    BuildContext context,
+    UserSetting currentLanguageRecord,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text("Select Language"),
+        children: [
+          _langOption(
+            context,
+            "English",
+            MetadataKeys.languageEN,
+            currentLanguageRecord,
+          ),
+          _langOption(
+            context,
+            "中文",
+            MetadataKeys.languageZHHans,
+            currentLanguageRecord,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _langOption(
+    BuildContext context,
+    String label,
+    String code,
+    UserSetting currentLanguageRecord,
+  ) {
+    return SimpleDialogOption(
+      onPressed: () {
+        currentLanguageRecord.stringValue = code;
+        _repo.saveSettings(currentLanguageRecord);
+        Navigator.pop(context);
+      },
+      child: ListTile(
+        leading: currentLanguageRecord.stringValue == code
+            ? Icon(Icons.check)
+            : Icon(Icons.check_box_outline_blank),
+        title: Text(label),
       ),
     );
   }
