@@ -3,6 +3,7 @@ import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
 import 'package:claw_shelf/core/engine/isar/user_setting.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:claw_shelf/screens/category_list.dart';
 import 'package:claw_shelf/screens/doc_index.dart';
 import 'package:claw_shelf/screens/search.dart';
@@ -70,28 +71,31 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
               childAspectRatio: 1.1,
             ),
             delegate: SliverChildListDelegate([
-              _buildBentoCard("Fundamentals", Icons.book, Colors.amber, [
-                'concepts',
-                'nodes',
-                'automation',
-              ], isTall: true),
-              _buildBentoCard("Quick Start", Icons.bolt, Colors.green, [
-                'start',
-                'help',
-                'reference',
-              ]),
               _buildBentoCard(
-                "Skills & Tools",
+                AppLocalizations.of(context)!.bentoFundamentals,
+                Icons.book,
+                Colors.amber,
+                ['concepts', 'nodes', 'automation'],
+                isTall: true,
+              ),
+              _buildBentoCard(
+                AppLocalizations.of(context)!.bentoQuickStart,
+                Icons.bolt,
+                Colors.green,
+                ['start', 'help', 'reference'],
+              ),
+              _buildBentoCard(
+                AppLocalizations.of(context)!.bentoSkillsTools,
                 Icons.extension,
                 Colors.redAccent,
                 ['tools', 'plugins', 'web'],
               ),
-              _buildBentoCard("System & Setup", Icons.tune, Colors.blueGrey, [
-                'install',
-                'gateway',
-                'platforms',
-                'cli',
-              ]),
+              _buildBentoCard(
+                AppLocalizations.of(context)!.bentoSystemSetup,
+                Icons.tune,
+                Colors.blueGrey,
+                ['install', 'gateway', 'platforms', 'cli'],
+              ),
             ]),
           ),
         ),
@@ -125,10 +129,12 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Full Document Index",
+                          AppLocalizations.of(context)!.bentoFullDocumentIndex,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        const Text("Explore the complete library hierarchy"),
+                        Text(
+                          AppLocalizations.of(context)!.bentoExploreHierarchy,
+                        ),
                       ],
                     ),
                   ],
@@ -144,6 +150,9 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
   }
 
   Widget _buildSmartSearchBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -156,25 +165,48 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
         );
       },
       child: Hero(
-        tag: 'search_bar_hero', // Same tag must be used in SearchScreen
+        tag: 'search_bar_hero',
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            // Adaptive Color: Darker in Light Mode, Glass-like in Dark Mode
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.15)
+                : theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white24),
+            border: Border.all(
+              color: isDark ? Colors.white24 : theme.colorScheme.outlineVariant,
+            ),
+            // Adding a subtle shadow in Light Mode helps depth
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
           child: Row(
             children: [
-              const Icon(Icons.search, color: Colors.white70, size: 20),
+              Icon(
+                Icons.search,
+                color: isDark
+                    ? Colors.white70
+                    : theme.colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  "Search agent commands...",
+                  AppLocalizations.of(context)!.bentoSearchHint,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.7)
+                        : theme.colorScheme.onSurfaceVariant,
                     fontSize: 14,
                   ),
                 ),
@@ -281,7 +313,7 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
                   vertical: 10,
                 ),
                 child: Text(
-                  "Recently Viewed",
+                  AppLocalizations.of(context)!.bentoRecentlyViewed,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -321,7 +353,11 @@ class _CSMainPageBentoBodyState extends State<CSMainPageBentoBody> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Document no longer exists."),
+                                content: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.bentoDocumentNoLongerExist,
+                                ),
                               ),
                             );
                           }

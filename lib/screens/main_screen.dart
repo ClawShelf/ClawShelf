@@ -1,5 +1,6 @@
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:claw_shelf/screens/main_screen_pages/bento_body.dart';
 import 'package:claw_shelf/screens/main_screen_pages/settings.dart';
 import 'package:flutter/material.dart';
@@ -42,15 +43,15 @@ class _CSMainScreenState extends State<CSMainScreen> {
             _currentIndex = index;
           });
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.grid_view_rounded),
-            label: 'Home',
+            label: AppLocalizations.of(context)!.navHome,
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            label: AppLocalizations.of(context)!.navSettings,
           ),
         ],
       ),

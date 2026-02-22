@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:claw_shelf/core/constants/keys.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
@@ -68,7 +69,9 @@ class _CSSearchScreenState extends State<CSSearchScreen> {
               controller: _controller,
               autofocus: true,
               onChanged: _onSearch,
-              decoration: const InputDecoration(hintText: 'Search docs...'),
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.searchSearchHint,
+              ),
             ),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:claw_shelf/core/constants/keys.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get_it/get_it.dart';
@@ -54,7 +55,9 @@ class _CSDocContentPageState extends State<CSDocContentPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text("Documentation")),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.docDocumentation),
+      ),
       body: FutureBuilder<DocEntry?>(
         future: _docFuture,
         builder: (context, snapshot) {

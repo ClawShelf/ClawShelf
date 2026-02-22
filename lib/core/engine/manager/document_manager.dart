@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/constants/urls.dart';
+import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -46,12 +48,13 @@ class DocSyncManager {
             'hash': remoteHash,
             'path': '$targetPath/update.zip',
           });
+          final l10n = await getL10n();
           if (success) {
             GetIt.instance<GlobalKey<ScaffoldMessengerState>>().currentState
                 ?.showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
-                      "🚀 Updates downloaded. Applied on next restart.",
+                      l10n.documentManagerUpdateDownloadedSnackBarMessage,
                     ),
                   ),
                 );
@@ -62,6 +65,16 @@ class DocSyncManager {
       print("⚠️ Background sync error: $e");
     }
   }
+}
+
+Future<AppLocalizations> getL10n() async {
+  // 1. Get current language from your Isar-backed repository
+  final langCodeRecord = GetIt.I<SettingsRepository>().getLanguage();
+
+  // 2. Manually load the generated localizations for that locale
+  return await AppLocalizations.delegate.load(
+    Locale(langCodeRecord.stringValue!),
+  );
 }
 
 // 1. The "Heavy Lifter" function (Runs in Isolate)

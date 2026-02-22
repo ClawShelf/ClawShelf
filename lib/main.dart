@@ -1,6 +1,7 @@
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/user_setting.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:claw_shelf/services/isar_open.dart';
 import 'package:flutter/material.dart';
 import 'package:claw_shelf/screens/doc_seed.dart';
@@ -57,6 +58,19 @@ class ClawShelfApp extends StatelessWidget {
         final isDarkRecord = repo.getIsDarkMode();
         final langCode = repo.getLanguage();
 
+        late Locale appLocale;
+        switch (langCode.stringValue) {
+          case 'zh-Hans':
+            appLocale = Locale.fromSubtags(
+              languageCode: 'zh',
+              scriptCode: 'Hans',
+            );
+            break;
+          default:
+            appLocale = Locale(langCode.stringValue!);
+            break;
+        }
+
         return MaterialApp(
           scaffoldMessengerKey: snackbarKey, // Register the key here
           title: 'ClawShelf',
@@ -69,19 +83,18 @@ class ClawShelfApp extends StatelessWidget {
           ),
           darkTheme: ThemeData.dark(useMaterial3: true),
 
-          locale: Locale(langCode.stringValue!),
+          locale: appLocale,
           supportedLocales: const [
-            Locale(MetadataKeys.languageEN),
+            Locale('en'),
             Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
-            // Locale(MetadataKeys.languageZHHans),
           ],
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             // Add your localization delegates here (GlobalMaterialLocalizations, etc.)
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-
           home: CSDocSeedScreen(),
         );
       },

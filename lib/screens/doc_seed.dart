@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:claw_shelf/services/isar_open.dart';
 import 'package:claw_shelf/services/sync_logic.dart';
 import 'package:flutter/foundation.dart';
@@ -32,12 +33,23 @@ class CSDocSeedScreen extends StatefulWidget {
 }
 
 class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
-  String _statusMessage = "Starting up...";
+  // Initialize with an empty string or a fallback to prevent "LateInitializationError"
+  String _statusMessage = '';
 
   @override
-  void initState() {
-    super.initState();
-    _startInitialization();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Set initial message once context is ready, but only if we haven't started yet
+    if (_statusMessage.isEmpty) {
+      _statusMessage = AppLocalizations.of(context)!.seedStartingUp;
+      _startInitialization();
+    }
+  }
+
+  // Helper to safely get localized strings within async methods
+  String _getL10n(String Function(AppLocalizations) getter) {
+    if (!mounted) return '';
+    return getter(AppLocalizations.of(context)!);
   }
 
   Future<void> _startInitialization() async {
@@ -48,7 +60,13 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
 
       // 1. Initial Seed Check
       if (!localDbFile.existsSync()) {
-        setState(() => _statusMessage = "Seeding document library...");
+        if (mounted) {
+          setState(
+            () =>
+                _statusMessage = _getL10n((l) => l.seedSeedingDocumentLibrary),
+          );
+        }
+
         final isarData = await rootBundle.load(
           'assets/${DocSyncManager.dbName}.isar',
         );
@@ -57,18 +75,28 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
 
       // 2. Pending Update Check
       if (updateZip.existsSync()) {
-        setState(() => _statusMessage = "Applying latest updates...");
+        if (mounted) {
+          setState(
+            () => _statusMessage = _getL10n((l) => l.seedApplyLatestUpdate),
+          );
+        }
+
         await compute(_processBundleIsolate, {
           'zipPath': updateZip.path,
           'path': dir.path,
-          'hash': '', // We already verified this during the download phase
+          'hash': '',
         });
         await updateZip.delete();
       }
 
       // 3. Open Final Instance
-      setState(() => _statusMessage = "Loading documents...");
-      final isar = await openIsarSafe(
+      if (mounted) {
+        setState(
+          () => _statusMessage = _getL10n((l) => l.seedLoadingDocuments),
+        );
+      }
+
+      final docIsar = await openIsarSafe(
         schemas: [
           DocEntrySchema,
           AppMetadataSchema,
@@ -80,7 +108,13 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
         directory: dir.path,
         inspector: MetadataKeys.inspectDocsIsar,
         onRecoveryNeeded: () async {
-          setState(() => _statusMessage = "Seeding document library...");
+          if (mounted) {
+            setState(
+              () => _statusMessage = _getL10n(
+                (l) => l.seedSeedingDocumentLibrary,
+              ),
+            );
+          }
           final isarData = await rootBundle.load(
             'assets/${DocSyncManager.dbName}.isar',
           );
@@ -90,22 +124,22 @@ class _CSDocSeedScreenState extends State<CSDocSeedScreen> {
 
       // 4. Register and Start Background Sync
       GetIt.I.registerSingleton<Isar>(
-        isar,
+        docIsar,
         instanceName: MetadataKeys.docsIsarKey,
       );
 
-      // We don't await this; it runs in the background while the user is in the app
-      DocSyncManager.startBackgroundDownload(isar, dir.path);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        DocSyncManager.startBackgroundDownload(docIsar, dir.path);
+      });
 
       // 5. Navigate to Main
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => CSMainScreen()));
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const CSMainScreen()),
+        );
       }
     } catch (e) {
-      setState(() => _statusMessage = "Error: $e");
-      // You might want to add a "Retry" button here for robustness
+      if (mounted) setState(() => _statusMessage = "Error: $e");
     }
   }
 

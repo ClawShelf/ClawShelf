@@ -1,5 +1,6 @@
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:claw_shelf/services/doc_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -43,7 +44,7 @@ class _CSDocIndexScreenState extends State<CSDocIndexScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Library Index"),
+        title: Text(AppLocalizations.of(context)!.docIndexLibraryIndex),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
@@ -83,7 +84,7 @@ class _CSDocIndexScreenState extends State<CSDocIndexScreen> {
           color: Theme.of(context).colorScheme.primary,
         ),
         title: Text(
-          tab.title ?? "General",
+          tab.title ?? AppLocalizations.of(context)!.docIndexGeneral,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         children: tab.groups?.map((group) => _buildGroup(group)).toList() ?? [],
@@ -120,7 +121,7 @@ class _CSDocIndexScreenState extends State<CSDocIndexScreen> {
           tilePadding: EdgeInsets.only(left: leftPadding),
           leading: const Icon(Icons.subdirectory_arrow_right, size: 16),
           title: Text(
-            node.title ?? "Section",
+            node.title ?? AppLocalizations.of(context)!.docIndexSection,
             style: const TextStyle(fontSize: 15),
           ),
           children: node.children!
@@ -136,7 +137,7 @@ class _CSDocIndexScreenState extends State<CSDocIndexScreen> {
         title: Text(
           node.title ??
               CSDocNavigation.findDocByPath(node.path!)?.title ??
-              "Untitled Page",
+              AppLocalizations.of(context)!.docIndexUntitledPage,
           style: const TextStyle(fontSize: 14),
         ),
         onTap: () => _openDoc(node.path),

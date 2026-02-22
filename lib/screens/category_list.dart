@@ -1,4 +1,5 @@
 import 'package:claw_shelf/core/constants/keys.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:claw_shelf/core/engine/isar/document.dart';
@@ -39,7 +40,9 @@ class CSCategoryListPage extends StatelessWidget {
 
           final docs = snapshot.data ?? [];
           if (docs.isEmpty) {
-            return const Center(child: Text("No documents found."));
+            return Center(
+              child: Text(AppLocalizations.of(context)!.searchNoDocumentsFound),
+            );
           }
 
           return ListView.builder(
@@ -48,7 +51,10 @@ class CSCategoryListPage extends StatelessWidget {
               final doc = docs[index];
               return ListTile(
                 leading: Text(doc.emoji ?? "📄"),
-                title: Text(doc.title ?? "Untitled"),
+                title: Text(
+                  doc.title ??
+                      AppLocalizations.of(context)!.docIndexUntitledPage,
+                ),
                 subtitle: Text(doc.docId ?? ""),
                 onTap: () => _openDoc(context, doc),
               );

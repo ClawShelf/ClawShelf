@@ -1,6 +1,7 @@
 import 'package:claw_shelf/core/constants/keys.dart';
 import 'package:claw_shelf/core/engine/isar/user_setting.dart';
 import 'package:claw_shelf/core/engine/manager/settings_repository.dart';
+import 'package:claw_shelf/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,10 +20,13 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Settings"), centerTitle: true),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.settingsTitle),
+        centerTitle: true,
+      ),
       body: ListView(
         children: [
-          _buildHeader("Display"),
+          _buildHeader(AppLocalizations.of(context)!.settingsDisplay),
 
           // Dark Mode Toggle using your Repo logic
           StreamBuilder(
@@ -34,8 +38,10 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
 
               return SwitchListTile(
                 secondary: const Icon(Icons.dark_mode_outlined),
-                title: const Text("Dark Mode"),
-                subtitle: const Text("Reduce eye strain in low light"),
+                title: Text(AppLocalizations.of(context)!.settingsDarkMode),
+                subtitle: Text(
+                  AppLocalizations.of(context)!.settingsDarkModeHint,
+                ),
                 value: isDarkRecord.boolValue!,
                 onChanged: (bool value) {
                   isDarkRecord.boolValue = value;
@@ -46,7 +52,9 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
           ),
 
           const Divider(),
-          _buildHeader("Content & Localization"),
+          _buildHeader(
+            AppLocalizations.of(context)!.settingsContentLocalization,
+          ),
 
           StreamBuilder(
             stream: _repo.watchSetting(MetadataKeys.language),
@@ -55,7 +63,11 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
 
               return ListTile(
                 leading: const Icon(Icons.language_rounded),
-                title: const Text("App Language"),
+                title: Text(
+                  AppLocalizations.of(
+                    context,
+                  )!.settingsContentLocalizationAppLanguage,
+                ),
                 subtitle: Text(
                   langaugeRecord.stringValue == 'en' ? "English" : '中文',
                 ), // You can expand this later
@@ -70,31 +82,33 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
 
           ListTile(
             leading: const Icon(Icons.code_rounded),
-            title: const Text("GitHub Repository"),
-            subtitle: const Text("View source and report issues"),
+            title: Text(AppLocalizations.of(context)!.settingsGithubRepository),
+            subtitle: Text(AppLocalizations.of(context)!.settingsGithubHint),
             trailing: const Icon(Icons.open_in_new, size: 20),
             onTap: () => _launchGitHub(),
           ),
 
           const Divider(),
-          _buildHeader("Maintenance"),
+          _buildHeader(AppLocalizations.of(context)!.settingsMaintenance),
 
           ListTile(
             leading: const Icon(
               Icons.cleaning_services_rounded,
               color: Colors.orange,
             ),
-            title: const Text("Clear History"),
-            subtitle: const Text("Removes your recently viewed documents"),
+            title: Text(AppLocalizations.of(context)!.settingsClearHistory),
+            subtitle: Text(
+              AppLocalizations.of(context)!.settingsClearHistoryHint,
+            ),
             onTap: () => _confirmClearHistory(context),
           ),
 
-          const AboutListTile(
+          AboutListTile(
             icon: Icon(Icons.info_outline_rounded),
             applicationName: 'ClawShelf',
             applicationVersion: '1.1.0',
             applicationLegalese: '© 2026 ClawShelf Contributors',
-            child: Text("View Licenses"),
+            child: Text(AppLocalizations.of(context)!.settingsViewLicenses),
           ),
         ],
       ),
@@ -127,14 +141,18 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Clear History?"),
-        content: const Text(
-          "This will remove all entries from your 'Recent Docs' list.",
+        title: Text(
+          AppLocalizations.of(context)!.settingsClearHistoryDialogTitle,
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.settingsClearHistoryDialogText,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(
+              AppLocalizations.of(context)!.settingsClearHistoryDialogCancel,
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -142,11 +160,20 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
               _repo.clearRecentlyViewed();
               GetIt.instance<GlobalKey<ScaffoldMessengerState>>().currentState
                   ?.showSnackBar(
-                    const SnackBar(content: Text("Recent history cleared.")),
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(
+                          context,
+                        )!.settingsClearHistorySnackBarMessage,
+                      ),
+                    ),
                   );
               Navigator.pop(context);
             },
-            child: const Text("Clear", style: TextStyle(color: Colors.red)),
+            child: Text(
+              AppLocalizations.of(context)!.settingsClearHistoryDialogClear,
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -160,7 +187,7 @@ class _CSSettingsPageState extends State<CSSettingsPage> {
     showDialog(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text("Select Language"),
+        title: Text(AppLocalizations.of(context)!.settingsLanguageDialogTitle),
         children: [
           _langOption(
             context,
