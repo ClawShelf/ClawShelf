@@ -150,7 +150,7 @@ void main(List<String> arguments) async {
   });
 
   // At the very end of main()
-  await isar.close();
+  isar.close();
   print("🚀 Isar database generated successfully at $outputPath");
 
   // Clean up the lock file so it doesn't get zipped

@@ -34,7 +34,7 @@ class DocSyncManager {
       final int localTimestamp = localMeta?.valueInt ?? 0;
 
       if (remoteTimestamp > localTimestamp) {
-        print("☁️ New bundle $remoteTimestamp found. Downloading...");
+        debugPrint("☁️ New bundle $remoteTimestamp found. Downloading...");
         final zipResponse = await http.get(
           Uri.parse(manifest[MetadataKeys.jsonZipUrl]),
         );
@@ -62,7 +62,7 @@ class DocSyncManager {
         }
       }
     } catch (e) {
-      print("⚠️ Background sync error: $e");
+      debugPrint("⚠️ Background sync error: $e");
     }
   }
 }
@@ -87,7 +87,7 @@ Future<bool> _verifyAndSave(Map<String, dynamic> params) async {
   // Heavy CPU work: Hashing
   final String actualHash = sha256.convert(bytes).toString();
 
-  print("Expected hash $expectedHash, downloaded hash $actualHash");
+  debugPrint("Expected hash $expectedHash, downloaded hash $actualHash");
 
   if (actualHash == expectedHash) {
     // Heavy I/O work: Writing to disk

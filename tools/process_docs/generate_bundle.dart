@@ -114,8 +114,9 @@ class DocProcessor {
       final altText = match.group(1)!;
       final oldSrc = match.group(2)!;
 
-      if (oldSrc.startsWith(RegExp(r'http|https|data:')))
+      if (oldSrc.startsWith(RegExp(r'http|https|data:'))) {
         return match.group(0)!;
+      }
 
       final normalizedSrc =
           oldSrc.startsWith('/') ? oldSrc.substring(1) : oldSrc;
