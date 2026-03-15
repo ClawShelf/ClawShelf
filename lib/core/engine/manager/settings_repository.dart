@@ -18,6 +18,7 @@ class SettingsRepository {
     UserSetting record;
     if (setting.id == -1) {
       record = UserSetting(id: _prefsIsar.userSettings.autoIncrement())
+        ..key = setting.key
         ..boolValue = setting.boolValue
         ..intValue = setting.intValue
         ..stringValue = setting.stringValue;
