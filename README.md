@@ -54,7 +54,7 @@ ClawShelf uses a custom pipeline to transform Markdown into a high-performance d
 To download the latest pre-compiled database and images into your `assets/` folder:
 
 ```bash
-dart run tool/fetch_assets.dart
+dart run tools/fetch_assets.dart
 ```
 
 **2. Compiling Local Assets (Development)**
@@ -62,10 +62,10 @@ To build the database from a local copy of the OpenClaw docs:
 
 ```bash
 # Basic build (updates assets/ for local testing)
-dart run tool/package_documents.dart --openclaw_path ~/path/to/openclaw --output assets
+dart run tools/package_documents.dart --openclaw_path ~/path/to/openclaw --output assets
 
 # Full build (updates assets/ AND generates ZIP/Manifest in dist/)
-dart run tool/package_documents.dart --openclaw_path ~/path/to/openclaw --output assets --archive
+dart run tools/package_documents.dart --openclaw_path ~/path/to/openclaw --output assets --archive
 
 ```
 

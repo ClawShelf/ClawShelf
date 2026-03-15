@@ -15,16 +15,16 @@ class SettingsRepository {
   }
 
   Future saveSettings(UserSetting setting) async {
-    UserSetting record;
-    if (setting.id == -1) {
-      record = UserSetting(id: _prefsIsar.userSettings.autoIncrement())
-        ..key = setting.key
-        ..boolValue = setting.boolValue
-        ..intValue = setting.intValue
-        ..stringValue = setting.stringValue;
-    } else {
-      record = setting;
-    }
+    final record =
+        UserSetting(
+            id: setting.id == -1
+                ? _prefsIsar.userSettings.autoIncrement()
+                : setting.id,
+          )
+          ..key = setting.key
+          ..boolValue = setting.boolValue
+          ..intValue = setting.intValue
+          ..stringValue = setting.stringValue;
     await _prefsIsar.writeAsync((isar) {
       isar.userSettings.put(record);
     });
